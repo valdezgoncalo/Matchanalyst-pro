@@ -309,7 +309,7 @@
 
   /* ── PITCH MAP ── */
   #pitch-container {
-    position: relative; width: 100%; max-width: 380px;
+    position: relative; width: 100%; max-width: 500px;
     margin: 0 auto; cursor: crosshair;
   }
   #pitch-svg { width: 100%; display: block; }
@@ -431,6 +431,9 @@
   .tag-pill .remove { cursor: pointer; color: var(--text3); font-size: 14px; }
   .tag-pill .remove:hover { color: var(--red); }
 
+  /* SYNC SPIN */
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
   /* SCROLLBAR */
   ::-webkit-scrollbar { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
@@ -486,6 +489,10 @@
     <span class="top-nav-logo">MatchAnalyst</span>
     <span class="top-nav-badge">PRO</span>
     <div class="top-nav-right">
+      <button id="sync-btn" onclick="syncData()" title="Sincronizar" style="background:none;border:1px solid var(--border);color:var(--text2);padding:5px 10px;border-radius:var(--radius-sm);cursor:pointer;font-size:12px;display:flex;align-items:center;gap:5px;transition:all .2s">
+        <svg id="sync-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+        <span id="sync-label">Sync</span>
+      </button>
       <div class="user-pill" id="user-pill">
         <div class="user-avatar" id="user-avatar">A</div>
         <span class="user-email" id="user-email-display">analista</span>
@@ -628,27 +635,7 @@
       <!-- TAB: TÁTICO -->
       <div id="atab-tatico" class="analysis-tab-content" style="display:none">
         <div class="card">
-          <div class="card-title"><span class="dot"></span>Métricas de Posse & Pressão</div>
-          <div class="grid-2">
-            <div class="input-group">
-              <label>Posse de Bola (%)</label>
-              <input type="number" id="f-posse" min="0" max="100" placeholder="52">
-            </div>
-            <div class="input-group">
-              <label>PPDA (Pressão)</label>
-              <input type="number" id="f-ppda" step="0.1" placeholder="8.5">
-            </div>
-          </div>
-          <div class="grid-2">
-            <div class="input-group">
-              <label>Linha Defensiva (m)</label>
-              <input type="number" id="f-linha-def" placeholder="35">
-            </div>
-            <div class="input-group">
-              <label>Linha Ofensiva (m)</label>
-              <input type="number" id="f-linha-of" placeholder="55">
-            </div>
-          </div>
+          <div class="card-title"><span class="dot"></span>Organização & Estilo de Jogo</div>
           <div class="grid-2">
             <div class="input-group">
               <label>Amplitude Defensiva</label>
@@ -663,6 +650,20 @@
               </select>
             </div>
           </div>
+          <div class="grid-2">
+            <div class="input-group">
+              <label>Ritmo de Jogo</label>
+              <select id="f-ritmo">
+                <option value="">-</option><option>Muito Intenso</option><option>Intenso</option><option>Médio</option><option>Lento</option>
+              </select>
+            </div>
+            <div class="input-group">
+              <label>Estilo Predominante</label>
+              <select id="f-estilo">
+                <option value="">-</option><option>Posse e Controlo</option><option>Jogo Direto</option><option>Contra-ataque</option><option>Pressão Alta</option><option>Defensivo</option><option>Variável</option>
+              </select>
+            </div>
+          </div>
         </div>
 
         <div class="card">
@@ -671,10 +672,7 @@
             <div class="input-group"><label>Remates Totais</label><input type="number" id="f-remates" placeholder="12"></div>
             <div class="input-group"><label>Remates à Baliza</label><input type="number" id="f-remates-b" placeholder="6"></div>
           </div>
-          <div class="grid-2">
-            <div class="input-group"><label>xG</label><input type="number" id="f-xg" step="0.01" placeholder="1.82"></div>
-            <div class="input-group"><label>xGA</label><input type="number" id="f-xga" step="0.01" placeholder="0.95"></div>
-          </div>
+
           <div class="grid-2">
             <div class="input-group"><label>Cantos</label><input type="number" id="f-cantos" placeholder="5"></div>
             <div class="input-group"><label>Faltas</label><input type="number" id="f-faltas" placeholder="14"></div>
@@ -691,8 +689,8 @@
         <div class="phase-tabs">
           <button class="phase-tab active" onclick="switchPhase('ataque', this)">Organização Ofensiva</button>
           <button class="phase-tab" onclick="switchPhase('defesa', this)">Organização Defensiva</button>
-          <button class="phase-tab" onclick="switchPhase('trans-pos', this)">Trans. Positiva</button>
-          <button class="phase-tab" onclick="switchPhase('trans-neg', this)">Trans. Negativa</button>
+          <button class="phase-tab" onclick="switchPhase('trans-pos', this)">Trans. Ofensiva</button>
+          <button class="phase-tab" onclick="switchPhase('trans-neg', this)">Trans. Defe.</button>
           <button class="phase-tab" onclick="switchPhase('bola-parada', this)">Bola Parada</button>
         </div>
 
@@ -742,7 +740,7 @@
 
         <div id="phase-trans-pos" style="display:none">
           <div class="card">
-            <div class="card-title"><span class="dot"></span>Transição Positiva (Recuperação → Ataque)</div>
+            <div class="card-title"><span class="dot"></span>Transição Ofensiva (Recuperação → Ataque)</div>
             <div class="input-group">
               <label>Velocidade de Transição</label>
               <select id="f-vel-trans-pos"><option value="">-</option><option>Muito Rápida</option><option>Rápida</option><option>Controlada</option><option>Lenta</option></select>
@@ -756,7 +754,7 @@
 
         <div id="phase-trans-neg" style="display:none">
           <div class="card">
-            <div class="card-title"><span class="dot"></span>Transição Negativa (Perda → Defesa)</div>
+            <div class="card-title"><span class="dot"></span>Transição Defensiva (Perda → Defesa)</div>
             <div class="input-group">
               <label>Reação à Perda de Bola</label>
               <select id="f-reacao-perda"><option value="">-</option><option>Pressão Imediata</option><option>Reorganização Rápida</option><option>Recuo Direto</option><option>Desordenada</option></select>
@@ -812,39 +810,86 @@
         <div class="card">
           <div class="card-title"><span class="dot"></span>Campo — Clica para marcar evento</div>
           <div id="pitch-container">
-            <svg id="pitch-svg" viewBox="0 0 380 260" xmlns="http://www.w3.org/2000/svg">
-              <!-- Relva -->
-              <rect width="380" height="260" fill="#1a3a1a" rx="4"/>
-              <!-- Linhas principais -->
-              <rect x="10" y="10" width="360" height="240" fill="none" stroke="#2d5a2d" stroke-width="2"/>
-              <!-- Meio campo -->
-              <line x1="190" y1="10" x2="190" y2="250" stroke="#2d5a2d" stroke-width="1.5"/>
-              <circle cx="190" cy="130" r="30" fill="none" stroke="#2d5a2d" stroke-width="1.5"/>
-              <circle cx="190" cy="130" r="3" fill="#2d5a2d"/>
-              <!-- Área grande esquerda -->
-              <rect x="10" y="65" width="62" height="130" fill="none" stroke="#2d5a2d" stroke-width="1.5"/>
-              <!-- Área pequena esquerda -->
-              <rect x="10" y="95" width="28" height="70" fill="none" stroke="#2d5a2d" stroke-width="1.5"/>
-              <!-- Baliza esquerda -->
-              <rect x="4" y="112" width="6" height="36" fill="none" stroke="#4a7a4a" stroke-width="2"/>
+            <svg id="pitch-svg" viewBox="0 0 500 340" xmlns="http://www.w3.org/2000/svg">
+              <!-- Fundo relva com gradiente de zonas -->
+              <defs>
+                <linearGradient id="pitch-grad" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stop-color="#162e16"/>
+                  <stop offset="33%" stop-color="#1a3a1a"/>
+                  <stop offset="66%" stop-color="#1a3a1a"/>
+                  <stop offset="100%" stop-color="#162e16"/>
+                </linearGradient>
+              </defs>
+              <rect width="500" height="340" fill="url(#pitch-grad)" rx="6"/>
+
+              <!-- Riscas de relva subtis -->
+              <rect x="0" y="0" width="500" height="34" fill="rgba(255,255,255,0.015)" rx="0"/>
+              <rect x="0" y="68" width="500" height="34" fill="rgba(255,255,255,0.015)"/>
+              <rect x="0" y="136" width="500" height="34" fill="rgba(255,255,255,0.015)"/>
+              <rect x="0" y="204" width="500" height="34" fill="rgba(255,255,255,0.015)"/>
+              <rect x="0" y="272" width="500" height="34" fill="rgba(255,255,255,0.015)"/>
+
+              <!-- Bordas do campo -->
+              <rect x="12" y="12" width="476" height="316" fill="none" stroke="#3a7a3a" stroke-width="2.5"/>
+
+              <!-- Meio-campo linha -->
+              <line x1="250" y1="12" x2="250" y2="328" stroke="#3a7a3a" stroke-width="2"/>
+
+              <!-- Círculo central -->
+              <circle cx="250" cy="170" r="46" fill="none" stroke="#3a7a3a" stroke-width="1.8"/>
+              <!-- Ponto central -->
+              <circle cx="250" cy="170" r="4" fill="#3a7a3a"/>
+
+              <!-- Zona terço defensivo (tint) -->
+              <rect x="12" y="12" width="159" height="316" fill="rgba(232,93,74,0.04)"/>
+              <!-- Zona terço ofensivo (tint) -->
+              <rect x="329" y="12" width="159" height="316" fill="rgba(62,207,142,0.04)"/>
+
+              <!-- Linhas de terço -->
+              <line x1="171" y1="12" x2="171" y2="328" stroke="#3a7a3a" stroke-width="1" stroke-dasharray="4,4" opacity="0.5"/>
+              <line x1="329" y1="12" x2="329" y2="328" stroke="#3a7a3a" stroke-width="1" stroke-dasharray="4,4" opacity="0.5"/>
+
+              <!-- ÁREA GRANDE ESQUERDA (proporcional: 16.5m = ~16.5% de 105m) -->
+              <rect x="12" y="88" width="78" height="164" fill="rgba(255,255,255,0.04)" stroke="#3a7a3a" stroke-width="1.8"/>
+              <!-- ÁREA PEQUENA ESQUERDA -->
+              <rect x="12" y="124" width="32" height="92" fill="rgba(255,255,255,0.03)" stroke="#3a7a3a" stroke-width="1.5"/>
+              <!-- BALIZA ESQUERDA -->
+              <rect x="4" y="148" width="8" height="44" fill="rgba(255,255,255,0.08)" stroke="#5a9a5a" stroke-width="2.5"/>
               <!-- Ponto penálti esquerdo -->
-              <circle cx="50" cy="130" r="2" fill="#2d5a2d"/>
-              <!-- Área grande direita -->
-              <rect x="308" y="65" width="62" height="130" fill="none" stroke="#2d5a2d" stroke-width="1.5"/>
-              <!-- Área pequena direita -->
-              <rect x="342" y="95" width="28" height="70" fill="none" stroke="#2d5a2d" stroke-width="1.5"/>
-              <!-- Baliza direita -->
-              <rect x="370" y="112" width="6" height="36" fill="none" stroke="#4a7a4a" stroke-width="2"/>
+              <circle cx="62" cy="170" r="3" fill="#3a7a3a"/>
+              <!-- Arco área esquerda -->
+              <path d="M90,148 A46,46 0 0,1 90,192" fill="none" stroke="#3a7a3a" stroke-width="1.5"/>
+
+              <!-- ÁREA GRANDE DIREITA -->
+              <rect x="410" y="88" width="78" height="164" fill="rgba(255,255,255,0.04)" stroke="#3a7a3a" stroke-width="1.8"/>
+              <!-- ÁREA PEQUENA DIREITA -->
+              <rect x="456" y="124" width="32" height="92" fill="rgba(255,255,255,0.03)" stroke="#3a7a3a" stroke-width="1.5"/>
+              <!-- BALIZA DIREITA -->
+              <rect x="488" y="148" width="8" height="44" fill="rgba(255,255,255,0.08)" stroke="#5a9a5a" stroke-width="2.5"/>
               <!-- Ponto penálti direito -->
-              <circle cx="330" cy="130" r="2" fill="#2d5a2d"/>
+              <circle cx="438" cy="170" r="3" fill="#3a7a3a"/>
+              <!-- Arco área direita -->
+              <path d="M410,148 A46,46 0 0,0 410,192" fill="none" stroke="#3a7a3a" stroke-width="1.5"/>
+
               <!-- Cantos -->
-              <path d="M10,18 A8,8 0 0,1 18,10" fill="none" stroke="#2d5a2d" stroke-width="1"/>
-              <path d="M362,10 A8,8 0 0,1 370,18" fill="none" stroke="#2d5a2d" stroke-width="1"/>
-              <path d="M10,242 A8,8 0 0,0 18,250" fill="none" stroke="#2d5a2d" stroke-width="1"/>
-              <path d="M362,250 A8,8 0 0,0 370,242" fill="none" stroke="#2d5a2d" stroke-width="1"/>
-              <!-- Etiquetas -->
-              <text x="55" y="24" fill="#3a6a3a" font-size="9" font-family="sans-serif">DEFESA</text>
-              <text x="285" y="24" fill="#3a6a3a" font-size="9" font-family="sans-serif">ATAQUE</text>
+              <path d="M12,22 A10,10 0 0,1 22,12" fill="none" stroke="#3a7a3a" stroke-width="1.5"/>
+              <path d="M478,12 A10,10 0 0,1 488,22" fill="none" stroke="#3a7a3a" stroke-width="1.5"/>
+              <path d="M12,318 A10,10 0 0,0 22,328" fill="none" stroke="#3a7a3a" stroke-width="1.5"/>
+              <path d="M478,328 A10,10 0 0,0 488,318" fill="none" stroke="#3a7a3a" stroke-width="1.5"/>
+
+              <!-- Etiquetas de zona -->
+              <text x="65" y="30" fill="#e85d4a" fill-opacity="0.7" font-size="9" font-family="sans-serif" font-weight="bold" letter-spacing="1">DEF</text>
+              <text x="230" y="30" fill="#8b97b5" fill-opacity="0.6" font-size="9" font-family="sans-serif" font-weight="bold" letter-spacing="1">MEIO</text>
+              <text x="425" y="30" fill="#3ecf8e" fill-opacity="0.7" font-size="9" font-family="sans-serif" font-weight="bold" letter-spacing="1">ATA</text>
+
+              <!-- Seta direção ataque -->
+              <defs>
+                <marker id="arrow" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                  <path d="M0,0 L6,3 L0,6 Z" fill="#3ecf8e" opacity="0.4"/>
+                </marker>
+              </defs>
+              <line x1="340" y1="335" x2="470" y2="335" stroke="#3ecf8e" stroke-width="1.2" opacity="0.4" marker-end="url(#arrow)"/>
+              <text x="385" y="333" fill="#3ecf8e" fill-opacity="0.4" font-size="8" font-family="sans-serif">ATAQUE</text>
             </svg>
             <div id="event-markers-container" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;"></div>
           </div>
@@ -984,13 +1029,31 @@
         <div class="page-title">ESTATÍSTICAS</div>
         <div class="page-subtitle">Dashboard analítico</div>
       </div>
+
+      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
+        <select id="stats-filter-equipa" onchange="renderStats()" style="flex:1;min-width:140px;padding:8px 12px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:var(--font-body);outline:none">
+          <option value="">Todas as equipas</option>
+        </select>
+        <select id="stats-filter-tipo" onchange="renderStats()" style="padding:8px 12px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:var(--font-body);outline:none">
+          <option value="">Todos os tipos</option>
+          <option value="adversario">Adversário</option>
+          <option value="propria">Própria Equipa</option>
+        </select>
+      </div>
+
       <div class="grid-3" id="stats-summary" style="margin-bottom:16px"></div>
+
+      <div class="card" id="stats-compare-card" style="display:none">
+        <div class="card-title"><span class="dot"></span>Comparação de Jogos — <span id="stats-compare-label" style="color:var(--accent)"></span></div>
+        <div class="chart-wrap"><canvas id="chart-compare" height="220"></canvas></div>
+      </div>
+
       <div class="card">
-        <div class="card-title"><span class="dot"></span>Posse de Bola por Jogo</div>
+        <div class="card-title"><span class="dot"></span>Remates por Jogo</div>
         <div class="chart-wrap"><canvas id="chart-posse" height="200"></canvas></div>
       </div>
       <div class="card">
-        <div class="card-title"><span class="dot"></span>xG por Análise</div>
+        <div class="card-title"><span class="dot"></span>Faltas & Cantos por Jogo</div>
         <div class="chart-wrap"><canvas id="chart-xg" height="200"></canvas></div>
       </div>
       <div class="card">
@@ -1050,7 +1113,7 @@
 <div class="modal-overlay" id="pipeline-modal">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title">Novo Item Pipeline</div>
+      <div class="modal-title" id="pipeline-modal-title">Novo Item Pipeline</div>
       <button class="modal-close" onclick="closeModal('pipeline-modal')">×</button>
     </div>
     <div class="input-group">
@@ -1082,7 +1145,7 @@
         <option value="urgente">Urgente</option>
       </select>
     </div>
-    <button class="btn btn-primary" onclick="savePipelineItem()" style="width:100%;justify-content:center;margin-top:4px">Adicionar ao Pipeline</button>
+    <button class="btn btn-primary" id="pipeline-save-btn" onclick="savePipelineItem()" style="width:100%;justify-content:center;margin-top:4px">Adicionar ao Pipeline</button>
   </div>
 </div>
 
@@ -1260,7 +1323,7 @@ async function logout() {
 
 // ── DATA ──
 async function loadData() {
-  if (!supabase || !currentUser) {
+  if (!sbClient || !currentUser) {
     analyses = JSON.parse(localStorage.getItem('map_analyses') || '[]');
     pipelineItems = JSON.parse(localStorage.getItem('map_pipeline') || '[]');
     return;
@@ -1281,6 +1344,38 @@ async function loadData() {
 function saveLocal() {
   localStorage.setItem('map_analyses', JSON.stringify(analyses));
   localStorage.setItem('map_pipeline', JSON.stringify(pipelineItems));
+}
+
+async function syncData() {
+  const btn = document.getElementById('sync-btn');
+  const icon = document.getElementById('sync-icon');
+  const label = document.getElementById('sync-label');
+  if (!sbClient || !currentUser) { showToast('Sem ligação ao servidor.', 'error'); return; }
+  btn.disabled = true;
+  label.textContent = '...';
+  icon.style.animation = 'spin 1s linear infinite';
+  try {
+    const [{ data: a, error: ea }, { data: p, error: ep }] = await Promise.all([
+      sbClient.from('map_analyses').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false }),
+      sbClient.from('map_pipeline').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false })
+    ]);
+    if (ea) throw ea; if (ep) throw ep;
+    analyses = a || [];
+    pipelineItems = p || [];
+    saveLocal();
+    renderDashboard();
+    renderKanban();
+    renderCalendar();
+    renderStats();
+    if (document.getElementById('page-lista').classList.contains('active')) renderAnalysesList();
+    showToast('Dados sincronizados!', 'success');
+  } catch(e) {
+    showToast('Erro ao sincronizar: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    label.textContent = 'Sync';
+    icon.style.animation = '';
+  }
 }
 
 // ── NAVIGATION ──
@@ -1446,61 +1541,63 @@ function restorePitchEvents(events) {
 
 // ── SAVE ANALYSIS ──
 function getFormData() {
+  // Helpers: convert empty string to null for numeric/date fields
+  const txt  = id => document.getElementById(id).value.trim() || null;
+  const num  = id => { const v = document.getElementById(id).value.trim(); return v === '' ? null : Number(v); };
+  const date = id => document.getElementById(id).value || null;
+  const sel  = id => document.getElementById(id).value || null;
+
   return {
-    tipo: document.getElementById('f-tipo').value,
-    competicao: document.getElementById('f-competicao').value,
-    casa: document.getElementById('f-casa').value,
-    fora: document.getElementById('f-fora').value,
-    resultado: document.getElementById('f-resultado').value,
-    data: document.getElementById('f-data').value,
-    analista: document.getElementById('f-analista').value,
-    sistema: document.getElementById('f-sistema').value,
-    sistema_adv: document.getElementById('f-sistema-adv').value,
-    perfil_tags: [...tagsData.perfil],
+    tipo:            sel('f-tipo'),
+    competicao:      txt('f-competicao'),
+    casa:            txt('f-casa'),
+    fora:            txt('f-fora'),
+    resultado:       txt('f-resultado'),
+    data:            date('f-data'),
+    analista:        txt('f-analista'),
+    sistema:         sel('f-sistema'),
+    sistema_adv:     sel('f-sistema-adv'),
+    perfil_tags:     [...tagsData.perfil],
     // Tático
-    posse: document.getElementById('f-posse').value,
-    ppda: document.getElementById('f-ppda').value,
-    linha_def: document.getElementById('f-linha-def').value,
-    linha_of: document.getElementById('f-linha-of').value,
-    amplitude_def: document.getElementById('f-amplitude-def').value,
-    amplitude_of: document.getElementById('f-amplitude-of').value,
-    remates: document.getElementById('f-remates').value,
-    remates_b: document.getElementById('f-remates-b').value,
-    xg: document.getElementById('f-xg').value,
-    xga: document.getElementById('f-xga').value,
-    cantos: document.getElementById('f-cantos').value,
-    faltas: document.getElementById('f-faltas').value,
-    passes: document.getElementById('f-passes').value,
-    passes_p: document.getElementById('f-passes-p').value,
+    amplitude_def:   sel('f-amplitude-def'),
+    amplitude_of:    sel('f-amplitude-of'),
+    ritmo:           sel('f-ritmo'),
+    estilo:          sel('f-estilo'),
+    remates:         num('f-remates'),
+    remates_b:       num('f-remates-b'),
+    cantos:          num('f-cantos'),
+    faltas:          num('f-faltas'),
+    passes:          num('f-passes'),
+    passes_p:        num('f-passes-p'),
     // Fases
-    est_ataque: document.getElementById('f-est-ataque').value,
-    padroes_ataque: document.getElementById('f-padroes-ataque').value,
-    zona_ataque: document.getElementById('f-zona-ataque').value,
-    bloco: document.getElementById('f-bloco').value,
-    pressao: document.getElementById('f-pressao').value,
-    notas_defesa: document.getElementById('f-notas-defesa').value,
-    vel_trans_pos: document.getElementById('f-vel-trans-pos').value,
-    trans_pos_notas: document.getElementById('f-trans-pos-notas').value,
-    reacao_perda: document.getElementById('f-reacao-perda').value,
-    trans_neg_notas: document.getElementById('f-trans-neg-notas').value,
-    cantos_of: document.getElementById('f-cantos-of').value,
-    cantos_def: document.getElementById('f-cantos-def').value,
-    livres: document.getElementById('f-livres').value,
-    bp_notas: document.getElementById('f-bp-notas').value,
+    est_ataque:      sel('f-est-ataque'),
+    padroes_ataque:  txt('f-padroes-ataque'),
+    zona_ataque:     sel('f-zona-ataque'),
+    bloco:           sel('f-bloco'),
+    pressao:         sel('f-pressao'),
+    notas_defesa:    txt('f-notas-defesa'),
+    vel_trans_pos:   sel('f-vel-trans-pos'),
+    trans_pos_notas: txt('f-trans-pos-notas'),
+    reacao_perda:    sel('f-reacao-perda'),
+    trans_neg_notas: txt('f-trans-neg-notas'),
+    cantos_of:       sel('f-cantos-of'),
+    cantos_def:      sel('f-cantos-def'),
+    livres:          txt('f-livres'),
+    bp_notas:        txt('f-bp-notas'),
     // Avaliações
-    rating_geral: getRating('rating-geral'),
-    rating_tatica: getRating('rating-tatica'),
-    rating_intensidade: getRating('rating-intensidade'),
-    rating_ofensiva: getRating('rating-ofensiva'),
-    rating_defensiva: getRating('rating-defensiva'),
+    rating_geral:        getRating('rating-geral'),
+    rating_tatica:       getRating('rating-tatica'),
+    rating_intensidade:  getRating('rating-intensidade'),
+    rating_ofensiva:     getRating('rating-ofensiva'),
+    rating_defensiva:    getRating('rating-defensiva'),
     // Notas
-    pontos_fortes: document.getElementById('f-pontos-fortes').value,
-    pontos_fracos: document.getElementById('f-pontos-fracos').value,
-    recomendacoes: document.getElementById('f-recomendacoes').value,
-    notas: document.getElementById('f-notas').value,
-    proximo_data: document.getElementById('f-proximo-data').value,
-    proximo_local: document.getElementById('f-proximo-local').value,
-    proximo_plano: document.getElementById('f-proximo-plano').value,
+    pontos_fortes:   txt('f-pontos-fortes'),
+    pontos_fracos:   txt('f-pontos-fracos'),
+    recomendacoes:   txt('f-recomendacoes'),
+    notas:           txt('f-notas'),
+    proximo_data:    date('f-proximo-data'),
+    proximo_local:   sel('f-proximo-local'),
+    proximo_plano:   txt('f-proximo-plano'),
     // Mapa
     pitch_events: pitchEvents
   };
@@ -1536,9 +1633,14 @@ async function saveAnalysis() {
   }
 
   saveLocal();
-  showToast('Análise guardada com sucesso!', 'success');
-  openNewAnalysis();
+  const savedId = record.id;
+  showToast('Análise guardada! A abrir...', 'success');
   renderDashboard();
+  renderAnalysesList();
+  setTimeout(() => {
+    showPage('lista');
+    showAnalysisDetail(savedId);
+  }, 600);
 }
 
 function openNewAnalysis() {
@@ -1548,8 +1650,8 @@ function openNewAnalysis() {
   document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', i === 0));
   // Clear form
   ['f-tipo','f-competicao','f-casa','f-fora','f-resultado','f-data','f-analista',
-   'f-sistema','f-sistema-adv','f-posse','f-ppda','f-linha-def','f-linha-of',
-   'f-amplitude-def','f-amplitude-of','f-remates','f-remates-b','f-xg','f-xga',
+   'f-sistema','f-sistema-adv','f-amplitude-def','f-amplitude-of','f-ritmo','f-estilo',
+   'f-remates','f-remates-b',
    'f-cantos','f-faltas','f-passes','f-passes-p','f-est-ataque','f-padroes-ataque',
    'f-zona-ataque','f-bloco','f-pressao','f-notas-defesa','f-vel-trans-pos',
    'f-trans-pos-notas','f-reacao-perda','f-trans-neg-notas','f-cantos-of',
@@ -1574,8 +1676,8 @@ function loadAnalysisForEdit() {
   setTimeout(() => {
     const setVal = (id, val) => { const el = document.getElementById(id); if (el && val !== undefined && val !== null) el.value = val; };
     ['tipo','competicao','casa','fora','resultado','data','analista','sistema',
-     'sistema_adv','posse','ppda','linha_def','linha_of','amplitude_def','amplitude_of',
-     'remates','remates_b','xg','xga','cantos','faltas','passes','passes_p',
+     'sistema_adv','amplitude_def','amplitude_of','ritmo','estilo',
+     'remates','remates_b','cantos','faltas','passes','passes_p',
      'est_ataque','padroes_ataque','zona_ataque','bloco','pressao','notas_defesa',
      'vel_trans_pos','trans_pos_notas','reacao_perda','trans_neg_notas','cantos_of',
      'cantos_def','livres','bp_notas','pontos_fortes','pontos_fracos','recomendacoes',
@@ -1698,14 +1800,15 @@ function showAnalysisDetail(id) {
       ${kv('Sistema (Adversário)', a.sistema_adv)}
       ${kv('Analista', a.analista)}
     </div>
-    ${a.posse || a.xg ? `
+    ${(a.remates || a.cantos || a.estilo) ? `
     <div class="report-section">
-      <div class="report-section-title">Estatísticas</div>
-      ${kv('Posse', a.posse ? a.posse + '%' : '-')}
-      ${kv('xG / xGA', (a.xg || '-') + ' / ' + (a.xga || '-'))}
-      ${kv('Remates / À Baliza', (a.remates || '-') + ' / ' + (a.remates_b || '-'))}
-      ${kv('Passes / Precisão', (a.passes || '-') + ' / ' + (a.passes_p ? a.passes_p + '%' : '-'))}
-      ${kv('PPDA', a.ppda)}
+      <div class="report-section-title">Estatísticas & Estilo</div>
+      ${kv('Estilo Predominante', a.estilo)}
+      ${kv('Ritmo de Jogo', a.ritmo)}
+      ${kv('Remates / À Baliza', (a.remates != null ? a.remates : '-') + ' / ' + (a.remates_b != null ? a.remates_b : '-'))}
+      ${kv('Cantos / Faltas', (a.cantos != null ? a.cantos : '-') + ' / ' + (a.faltas != null ? a.faltas : '-'))}
+      ${kv('Passes / Precisão', (a.passes != null ? a.passes : '-') + ' / ' + (a.passes_p != null ? a.passes_p + '%' : '-'))}
+      ${kv('Amplitude Def / Of', [a.amplitude_def, a.amplitude_of].filter(Boolean).join(' · ') || null)}
     </div>` : ''}
     ${a.padroes_ataque || a.notas_defesa ? `
     <div class="report-section">
@@ -1753,11 +1856,17 @@ function renderKanban() {
       </div>
       <div id="kcol-${col.id}">
         ${pipelineItems.filter(p => p.estado === col.id).map(p => `
-          <div class="kanban-card" onclick="movePipelineItem('${p.id}')">
-            <div class="kanban-card-title">${p.adversario || 'Adversário'}</div>
+          <div class="kanban-card" onclick="openPipelineDetail('${p.id}')">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px">
+              <div class="kanban-card-title">${p.adversario || 'Adversário'}</div>
+              <button onclick="event.stopPropagation();deletePipelineItem('${p.id}')" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:0;line-height:1;flex-shrink:0" title="Eliminar">×</button>
+            </div>
             <div class="kanban-card-sub">${p.competicao || ''} · ${p.data || ''}</div>
-            <div class="kanban-card-tags">
-              ${p.prioridade === 'urgente' ? '<span class="badge badge-red">urgente</span>' : p.prioridade === 'alta' ? '<span class="badge badge-yellow">alta</span>' : ''}
+            <div class="kanban-card-tags" style="margin-top:8px;display:flex;align-items:center;justify-content:space-between">
+              <div style="display:flex;gap:4px">
+                ${p.prioridade === 'urgente' ? '<span class="badge badge-red">urgente</span>' : p.prioridade === 'alta' ? '<span class="badge badge-yellow">alta</span>' : ''}
+              </div>
+              <button onclick="event.stopPropagation();movePipelineItem('${p.id}')" style="background:none;border:1px solid var(--border);color:var(--text3);cursor:pointer;font-size:10px;padding:2px 7px;border-radius:20px;letter-spacing:.5px">→ avançar</button>
             </div>
           </div>
         `).join('')}
@@ -1772,6 +1881,10 @@ function openPipelineModal(estado) {
   document.getElementById('pk-adversario').value = '';
   document.getElementById('pk-competicao').value = '';
   document.getElementById('pk-data').value = '';
+  document.getElementById('pk-prioridade').value = 'normal';
+  document.getElementById('pipeline-modal-title').textContent = 'Novo Item Pipeline';
+  document.getElementById('pipeline-save-btn').textContent = 'Adicionar ao Pipeline';
+  document.getElementById('pipeline-save-btn').onclick = savePipelineItem;
   openModal('pipeline-modal');
 }
 
@@ -1809,6 +1922,48 @@ async function movePipelineItem(id) {
   if (sbClient && currentUser) await sbClient.from('map_pipeline').update({ estado: next }).eq('id', id);
   saveLocal();
   renderKanban();
+}
+
+function openPipelineDetail(id) {
+  const p = pipelineItems.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('pk-adversario').value = p.adversario || '';
+  document.getElementById('pk-competicao').value = p.competicao || '';
+  document.getElementById('pk-data').value = p.data || '';
+  document.getElementById('pk-estado').value = p.estado || 'agendado';
+  document.getElementById('pk-prioridade').value = p.prioridade || 'normal';
+  document.getElementById('pipeline-modal-title').textContent = 'Editar Pipeline';
+  document.getElementById('pipeline-save-btn').onclick = () => updatePipelineItem(p.id);
+  openModal('pipeline-modal');
+}
+
+async function deletePipelineItem(id) {
+  if (!confirm('Eliminar este item do pipeline?')) return;
+  if (sbClient && currentUser) await sbClient.from('map_pipeline').delete().eq('id', id);
+  pipelineItems = pipelineItems.filter(p => p.id !== id);
+  saveLocal();
+  renderKanban();
+  renderDashboard();
+  showToast('Item eliminado.', 'success');
+}
+
+async function updatePipelineItem(id) {
+  const item = pipelineItems.find(p => p.id === id);
+  if (!item) return;
+  item.adversario = document.getElementById('pk-adversario').value;
+  item.competicao = document.getElementById('pk-competicao').value;
+  item.data = document.getElementById('pk-data').value || null;
+  item.estado = document.getElementById('pk-estado').value;
+  item.prioridade = document.getElementById('pk-prioridade').value;
+  if (sbClient && currentUser) await sbClient.from('map_pipeline').update(item).eq('id', id);
+  saveLocal();
+  closeModal('pipeline-modal');
+  renderKanban();
+  renderDashboard();
+  showToast('Pipeline actualizado!', 'success');
+  // reset modal to "add" mode
+  document.getElementById('pipeline-modal-title').textContent = 'Novo Item Pipeline';
+  document.getElementById('pipeline-save-btn').onclick = savePipelineItem;
 }
 
 // ── CALENDAR ──
@@ -1863,17 +2018,62 @@ function showDayEvents(dateStr) {
 
 // ── STATS ──
 function renderStats() {
-  // Summary
   const avg = (arr, key) => { const vals = arr.map(a => parseFloat(a[key])).filter(v => !isNaN(v)); return vals.length ? (vals.reduce((a,b) => a+b, 0)/vals.length).toFixed(1) : '-'; };
+  const chartOpts = { x: { ticks: { color: '#8b97b5', font: { size: 9 } } }, y: { ticks: { color: '#8b97b5' } } };
+
+  // Populate equipa filter
+  const equipaSelect = document.getElementById('stats-filter-equipa');
+  const filterEquipa = equipaSelect?.value || '';
+  const filterTipo = document.getElementById('stats-filter-tipo')?.value || '';
+  const allTeams = [...new Set([...analyses.map(a => a.casa), ...analyses.map(a => a.fora)].filter(Boolean))].sort();
+  if (equipaSelect) {
+    const prev = equipaSelect.value;
+    equipaSelect.innerHTML = '<option value="">Todas as equipas</option>' + allTeams.map(t => `<option value="${t}"${t===prev?' selected':''}>${t}</option>`).join('');
+  }
+
+  // Filter analyses
+  let filtered = analyses;
+  if (filterEquipa) filtered = filtered.filter(a => a.casa === filterEquipa || a.fora === filterEquipa);
+  if (filterTipo) filtered = filtered.filter(a => a.tipo === filterTipo);
+
+  // Summary
   document.getElementById('stats-summary').innerHTML = `
-    <div class="stat-box"><div class="stat-box-val">${avg(analyses, 'posse')}%</div><div class="stat-box-lbl">Posse Média</div></div>
-    <div class="stat-box"><div class="stat-box-val">${avg(analyses, 'xg')}</div><div class="stat-box-lbl">xG Médio</div></div>
-    <div class="stat-box"><div class="stat-box-val">${avg(analyses, 'rating_geral')}</div><div class="stat-box-lbl">Rating Médio</div></div>
+    <div class="stat-box"><div class="stat-box-val">${filtered.length}</div><div class="stat-box-lbl">Análises</div></div>
+    <div class="stat-box"><div class="stat-box-val">${avg(filtered, 'remates')}</div><div class="stat-box-lbl">Remates Médio</div></div>
+    <div class="stat-box"><div class="stat-box-val">${avg(filtered, 'rating_geral')}</div><div class="stat-box-lbl">Rating Médio</div></div>
   `;
 
-  const recent = analyses.slice(0, 8).reverse();
-  const labels = recent.map(a => a.casa && a.fora ? `${a.casa.slice(0,6)} vs ${a.fora.slice(0,6)}` : a.data || '?');
+  // Comparar adversário — show timeline when filtered by team
+  const compareCard = document.getElementById('stats-compare-card');
+  if (filterEquipa && filtered.length > 0) {
+    compareCard.style.display = 'block';
+    document.getElementById('stats-compare-label').textContent = filterEquipa + ' (' + filtered.length + ' jogos)';
+    const sorted = [...filtered].sort((a,b) => (a.data||'').localeCompare(b.data||''));
+    const cLabels = sorted.map(a => a.data || '?');
+    if (charts.compare) charts.compare.destroy();
+    const ctxC = document.getElementById('chart-compare');
+    if (ctxC) {
+      charts.compare = new Chart(ctxC, {
+        type: 'line',
+        data: {
+          labels: cLabels,
+          datasets: [
+            { label: 'Rating Geral', data: sorted.map(a => a.rating_geral || null), borderColor: '#e8c42a', backgroundColor: 'rgba(232,196,42,0.1)', tension: 0.4, fill: true, spanGaps: true },
+            { label: 'Rating Tático', data: sorted.map(a => a.rating_tatica || null), borderColor: '#4a9eff', backgroundColor: 'rgba(74,158,255,0.1)', tension: 0.4, fill: true, spanGaps: true }
+          ]
+        },
+        options: { responsive: true, plugins: { legend: { labels: { color: '#8b97b5', font: { size: 11 } } } }, scales: { x: { ticks: { color: '#8b97b5', font: { size: 9 } } }, y: { min: 0, max: 10, ticks: { color: '#8b97b5' } } } }
+      });
+    }
+  } else {
+    compareCard.style.display = 'none';
+    if (charts.compare) { charts.compare.destroy(); charts.compare = null; }
+  }
 
+  const recent = filtered.slice(0, 8).reverse();
+  const labels = recent.map(a => a.casa && a.fora ? `${a.casa.slice(0,5)} vs ${a.fora.slice(0,5)}` : a.data || '?');
+
+  // Chart 1 — Remates
   if (charts.posse) charts.posse.destroy();
   const ctxP = document.getElementById('chart-posse');
   if (ctxP) {
@@ -1881,43 +2081,42 @@ function renderStats() {
       type: 'bar',
       data: {
         labels,
-        datasets: [{
-          label: 'Posse (%)',
-          data: recent.map(a => parseFloat(a.posse) || 0),
-          backgroundColor: 'rgba(232,196,42,0.7)',
-          borderColor: '#e8c42a',
-          borderWidth: 1, borderRadius: 4
-        }]
+        datasets: [
+          { label: 'Remates', data: recent.map(a => a.remates || 0), backgroundColor: 'rgba(74,158,255,0.7)', borderColor: '#4a9eff', borderWidth: 1, borderRadius: 4 },
+          { label: 'À Baliza', data: recent.map(a => a.remates_b || 0), backgroundColor: 'rgba(62,207,142,0.7)', borderColor: '#3ecf8e', borderWidth: 1, borderRadius: 4 }
+        ]
       },
-      options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#8b97b5', font: { size: 9 } } }, y: { ticks: { color: '#8b97b5' }, max: 100 } } }
+      options: { responsive: true, plugins: { legend: { labels: { color: '#8b97b5', font: { size: 11 } } } }, scales: chartOpts }
     });
   }
 
+  // Chart 2 — Faltas & Cantos
   if (charts.xg) charts.xg.destroy();
   const ctxX = document.getElementById('chart-xg');
   if (ctxX) {
     charts.xg = new Chart(ctxX, {
-      type: 'line',
+      type: 'bar',
       data: {
         labels,
         datasets: [
-          { label: 'xG', data: recent.map(a => parseFloat(a.xg) || 0), borderColor: '#4a9eff', backgroundColor: 'rgba(74,158,255,0.1)', tension: 0.4, fill: true },
-          { label: 'xGA', data: recent.map(a => parseFloat(a.xga) || 0), borderColor: '#e85d4a', backgroundColor: 'rgba(232,93,74,0.1)', tension: 0.4, fill: true }
+          { label: 'Faltas', data: recent.map(a => a.faltas || 0), backgroundColor: 'rgba(232,93,74,0.7)', borderColor: '#e85d4a', borderWidth: 1, borderRadius: 4 },
+          { label: 'Cantos', data: recent.map(a => a.cantos || 0), backgroundColor: 'rgba(167,139,250,0.7)', borderColor: '#a78bfa', borderWidth: 1, borderRadius: 4 }
         ]
       },
-      options: { responsive: true, plugins: { legend: { labels: { color: '#8b97b5', font: { size: 11 } } } }, scales: { x: { ticks: { color: '#8b97b5', font: { size: 9 } } }, y: { ticks: { color: '#8b97b5' } } } }
+      options: { responsive: true, plugins: { legend: { labels: { color: '#8b97b5', font: { size: 11 } } } }, scales: chartOpts }
     });
   }
 
+  // Chart 3 — Radar
   if (charts.radar) charts.radar.destroy();
   const ctxR = document.getElementById('chart-radar');
-  if (ctxR && analyses.length) {
+  if (ctxR && filtered.length) {
     const avgs = {
-      Geral: avg(analyses, 'rating_geral'),
-      Táctica: avg(analyses, 'rating_tatica'),
-      Intensidade: avg(analyses, 'rating_intensidade'),
-      Ofensiva: avg(analyses, 'rating_ofensiva'),
-      Defensiva: avg(analyses, 'rating_defensiva')
+      Geral: avg(filtered, 'rating_geral'),
+      Táctica: avg(filtered, 'rating_tatica'),
+      Intensidade: avg(filtered, 'rating_intensidade'),
+      Ofensiva: avg(filtered, 'rating_ofensiva'),
+      Defensiva: avg(filtered, 'rating_defensiva')
     };
     charts.radar = new Chart(ctxR, {
       type: 'radar',
@@ -2009,20 +2208,22 @@ function generatePDF(data) {
   row('Sistema Equipa', data.sistema); row('Sistema Adversário', data.sistema_adv);
   row('Analista', data.analista);
 
-  if (data.posse || data.xg) {
-    y += 3; section('Estatísticas');
-    row('Posse de Bola', data.posse ? data.posse + '%' : '');
-    row('xG / xGA', data.xg && data.xga ? `${data.xg} / ${data.xga}` : '');
-    row('Remates', data.remates ? `${data.remates} total, ${data.remates_b} à baliza` : '');
-    row('PPDA', data.ppda);
+  if (data.remates || data.estilo || data.cantos) {
+    y += 3; section('Estatísticas & Estilo');
+    row('Estilo Predominante', data.estilo);
+    row('Ritmo de Jogo', data.ritmo);
+    row('Amplitude Def / Of', [data.amplitude_def, data.amplitude_of].filter(Boolean).join(' · ') || null);
+    row('Remates / À Baliza', data.remates != null ? `${data.remates} total, ${data.remates_b ?? '-'} à baliza` : '');
+    row('Cantos / Faltas', (data.cantos != null || data.faltas != null) ? `${data.cantos ?? '-'} cantos, ${data.faltas ?? '-'} faltas` : '');
+    row('Passes / Precisão', data.passes != null ? `${data.passes} passes (${data.passes_p ?? '-'}%)` : '');
   }
 
   if (data.padroes_ataque || data.notas_defesa) {
     y += 3; section('Análise de Fases');
     multiline('Ofensiva', data.padroes_ataque);
     multiline('Defensiva', data.notas_defesa);
-    multiline('Trans. Positiva', data.trans_pos_notas);
-    multiline('Trans. Negativa', data.trans_neg_notas);
+    multiline('Trans. Ofensiva', data.trans_pos_notas);
+    multiline('Trans. Defensiva', data.trans_neg_notas);
   }
 
   if (data.pontos_fortes || data.pontos_fracos) {
@@ -2086,9 +2287,9 @@ CREATE TABLE map_analyses (
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   tipo TEXT, competicao TEXT, casa TEXT, fora TEXT, resultado TEXT, data DATE, analista TEXT,
   sistema TEXT, sistema_adv TEXT, perfil_tags JSONB,
-  posse NUMERIC, ppda NUMERIC, linha_def NUMERIC, linha_of NUMERIC,
-  amplitude_def TEXT, amplitude_of TEXT, remates INTEGER, remates_b INTEGER,
-  xg NUMERIC, xga NUMERIC, cantos INTEGER, faltas INTEGER, passes INTEGER, passes_p NUMERIC,
+  amplitude_def TEXT, amplitude_of TEXT, ritmo TEXT, estilo TEXT,
+  remates INTEGER, remates_b INTEGER,
+  cantos INTEGER, faltas INTEGER, passes INTEGER, passes_p NUMERIC,
   est_ataque TEXT, padroes_ataque TEXT, zona_ataque TEXT,
   bloco TEXT, pressao TEXT, notas_defesa TEXT,
   vel_trans_pos TEXT, trans_pos_notas TEXT,
