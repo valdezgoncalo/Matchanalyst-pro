@@ -1125,6 +1125,24 @@ const KANBAN_COLS = [
 async function init() {
   try {
     supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  } catch(e) {
+    console.error('Supabase init error:', e);
+    showAuth();
+    return;
+  }
+
+  supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_IN' && session) {
+      currentUser = session.user;
+      showApp();
+    }
+    if (event === 'SIGNED_OUT') {
+      currentUser = null;
+      showAuth();
+    }
+  });
+
+  try {
     const { data: { session } } = await supabase.auth.getSession();
     if (session) {
       currentUser = session.user;
@@ -1132,13 +1150,9 @@ async function init() {
     } else {
       showAuth();
     }
-    supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN') { currentUser = session.user; showApp(); }
-      if (event === 'SIGNED_OUT') { currentUser = null; showAuth(); }
-    });
   } catch(e) {
-    // Offline mode
-    showApp(true);
+    console.error('Session error:', e);
+    showAuth();
   }
 }
 
@@ -1187,27 +1201,52 @@ function toggleAuthMode() {
   document.getElementById('auth-error').style.display = 'none';
 }
 
-document.getElementById('auth-btn').addEventListener('click', async () => {
+async function handleAuth() {
   const email = document.getElementById('auth-email').value.trim();
   const pass = document.getElementById('auth-pass').value;
   const errEl = document.getElementById('auth-error');
+  const btn = document.getElementById('auth-btn');
   errEl.style.display = 'none';
-  if (!email || !pass) { errEl.textContent = 'Preenche email e password.'; errEl.style.display = 'block'; return; }
+
+  if (!email || !pass) {
+    errEl.textContent = 'Preenche email e password.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  btn.textContent = 'A processar...';
+  btn.disabled = true;
+
   try {
     if (authMode === 'login') {
-      const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
       if (error) throw error;
     } else {
       const name = document.getElementById('auth-name').value.trim();
-      const { error } = await supabase.auth.signUp({ email, password: pass, options: { data: { name } } });
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password: pass,
+        options: { data: { name }, emailRedirectTo: window.location.href }
+      });
       if (error) throw error;
-      showToast('Confirma o teu email!', 'success');
+      errEl.style.background = 'rgba(62,207,142,.1)';
+      errEl.style.borderColor = 'var(--green)';
+      errEl.style.color = 'var(--green)';
+      errEl.textContent = '✅ Conta criada! Verifica o teu email para confirmar.';
+      errEl.style.display = 'block';
     }
   } catch(e) {
+    errEl.style.background = 'rgba(232,93,74,.15)';
+    errEl.style.borderColor = 'var(--red)';
+    errEl.style.color = 'var(--red)';
     errEl.textContent = e.message || 'Erro de autenticação.';
     errEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = authMode === 'login' ? 'ENTRAR' : 'REGISTAR';
   }
-});
+}
+document.getElementById('auth-btn').addEventListener('click', handleAuth);
 
 async function logout() {
   if (supabase) await supabase.auth.signOut();
@@ -2028,7 +2067,7 @@ function showToast(msg, type = '') {
 // ── KEYBOARD ──
 document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && document.getElementById('auth-screen').style.display !== 'none') {
-    document.getElementById('auth-btn').click();
+    handleAuth();
   }
 });
 
