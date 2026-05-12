@@ -475,7 +475,7 @@
     </div>
     <button class="btn-auth" id="auth-btn">ENTRAR</button>
     <div class="auth-toggle" id="auth-toggle-text">
-      Não tens conta? <span id="auth-toggle-link">Registar</span>
+      Não tens conta? <span id="auth-toggle-link" onclick="toggleAuthMode()">Registar</span>
     </div>
   </div>
 </div>
@@ -1176,17 +1176,16 @@ async function showApp(offline = false) {
 
 // ── AUTH ──
 let authMode = 'login';
-document.getElementById('auth-toggle-link').addEventListener('click', () => {
+function toggleAuthMode() {
   authMode = authMode === 'login' ? 'register' : 'login';
   document.getElementById('auth-title').textContent = authMode === 'login' ? 'Entrar' : 'Criar Conta';
   document.getElementById('auth-btn').textContent = authMode === 'login' ? 'ENTRAR' : 'REGISTAR';
   document.getElementById('auth-name-wrap').style.display = authMode === 'register' ? 'block' : 'none';
   document.getElementById('auth-toggle-text').innerHTML = authMode === 'login'
-    ? 'Não tens conta? <span id="auth-toggle-link">Registar</span>'
-    : 'Já tens conta? <span id="auth-toggle-link">Entrar</span>';
-  document.getElementById('auth-toggle-link').addEventListener('click', arguments.callee);
+    ? 'Não tens conta? <span id="auth-toggle-link" onclick="toggleAuthMode()">Registar</span>'
+    : 'Já tens conta? <span id="auth-toggle-link" onclick="toggleAuthMode()">Entrar</span>';
   document.getElementById('auth-error').style.display = 'none';
-});
+}
 
 document.getElementById('auth-btn').addEventListener('click', async () => {
   const email = document.getElementById('auth-email').value.trim();
