@@ -99,6 +99,33 @@
   .auth-toggle span { color: var(--accent); cursor: pointer; }
   .auth-error { background: rgba(232,93,74,.15); border: 1px solid var(--red); border-radius: var(--radius-sm); padding: 10px 14px; color: var(--red); font-size: 13px; margin-bottom: 12px; display: none; }
 
+  /* ── THEMES ── */
+  [data-theme="light"] {
+    --bg: #f0f2f7; --bg2: #ffffff; --bg3: #e8ebf2;
+    --card: #ffffff; --card2: #f4f6fb;
+    --border: #d0d8e8; --text: #1a2035; --text2: #4a5578; --text3: #8b97b5;
+  }
+  [data-theme="blue"] {
+    --bg: #060d1f; --bg2: #0a1628; --bg3: #0f1f38;
+    --card: #0d1a30; --card2: #122040;
+    --border: #1a3060; --accent: #4a9eff; --accent2: #2d7fe0;
+  }
+  [data-theme="green"] {
+    --bg: #040f08; --bg2: #071410; --bg3: #0a1f14;
+    --card: #091a12; --card2: #0f2418;
+    --border: #145028; --accent: #3ecf8e; --accent2: #29b876;
+  }
+  [data-theme="purple"] {
+    --bg: #0a0514; --bg2: #120a20; --bg3: #1a1030;
+    --card: #140d22; --card2: #1e1535;
+    --border: #2d1f50; --accent: #a78bfa; --accent2: #8b6ef0;
+  }
+  [data-theme="red"] {
+    --bg: #140608; --bg2: #1e0a0e; --bg3: #2a0e14;
+    --card: #1a0810; --card2: #240e16;
+    --border: #501020; --accent: #e85d4a; --accent2: #d04030;
+  }
+
   /* ── APP SHELL ── */
   #app { height: 100vh; display: flex; flex-direction: column; display: none; }
 
@@ -489,6 +516,10 @@
     <span class="top-nav-logo">MatchAnalyst</span>
     <span class="top-nav-badge">PRO</span>
     <div class="top-nav-right">
+      <button onclick="openModal('theme-modal')" title="Aparência" style="background:none;border:1px solid var(--border);color:var(--text2);padding:5px 10px;border-radius:var(--radius-sm);cursor:pointer;font-size:12px;display:flex;align-items:center;gap:5px;transition:all .2s" id="theme-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+        <span id="theme-label">Tema</span>
+      </button>
       <button id="sync-btn" onclick="syncData()" title="Sincronizar" style="background:none;border:1px solid var(--border);color:var(--text2);padding:5px 10px;border-radius:var(--radius-sm);cursor:pointer;font-size:12px;display:flex;align-items:center;gap:5px;transition:all .2s">
         <svg id="sync-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
         <span id="sync-label">Sync</span>
@@ -1088,6 +1119,50 @@
       <span class="nav-label">Stats</span>
     </button>
   </nav>
+</div>
+
+<!-- THEME PANEL -->
+<div class="modal-overlay" id="theme-modal">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header">
+      <div class="modal-title">Aparência</div>
+      <button class="modal-close" onclick="closeModal('theme-modal')">×</button>
+    </div>
+
+    <div style="margin-bottom:18px">
+      <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--text2);margin-bottom:10px">Modo</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button class="theme-mode-btn" id="btn-dark" onclick="setMode('dark')" style="padding:12px;border-radius:var(--radius-sm);border:2px solid var(--accent);background:var(--bg2);color:var(--text);cursor:pointer;font-family:var(--font-body);font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px">
+          🌙 Escuro
+        </button>
+        <button class="theme-mode-btn" id="btn-light" onclick="setMode('light')" style="padding:12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg3);color:var(--text2);cursor:pointer;font-family:var(--font-body);font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px">
+          ☀️ Claro
+        </button>
+      </div>
+    </div>
+
+    <div style="margin-bottom:18px">
+      <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--text2);margin-bottom:10px">Cor de Destaque</div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">
+        <button onclick="setAccent('gold')" class="accent-btn" id="acc-gold" title="Dourado" style="height:40px;border-radius:var(--radius-sm);background:#e8c42a;border:3px solid #e8c42a;cursor:pointer;transition:all .2s"></button>
+        <button onclick="setAccent('blue')" class="accent-btn" id="acc-blue" title="Azul" style="height:40px;border-radius:var(--radius-sm);background:#4a9eff;border:2px solid transparent;cursor:pointer;transition:all .2s"></button>
+        <button onclick="setAccent('green')" class="accent-btn" id="acc-green" title="Verde" style="height:40px;border-radius:var(--radius-sm);background:#3ecf8e;border:2px solid transparent;cursor:pointer;transition:all .2s"></button>
+        <button onclick="setAccent('purple')" class="accent-btn" id="acc-purple" title="Roxo" style="height:40px;border-radius:var(--radius-sm);background:#a78bfa;border:2px solid transparent;cursor:pointer;transition:all .2s"></button>
+        <button onclick="setAccent('red')" class="accent-btn" id="acc-red" title="Vermelho" style="height:40px;border-radius:var(--radius-sm);background:#e85d4a;border:2px solid transparent;cursor:pointer;transition:all .2s"></button>
+      </div>
+    </div>
+
+    <div style="margin-bottom:8px">
+      <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--text2);margin-bottom:10px">Pré-visualização</div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;display:flex;align-items:center;gap:12px">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:18px;color:var(--bg)">M</div>
+        <div>
+          <div style="font-family:var(--font-display);font-size:16px;letter-spacing:1px;color:var(--accent)">MATCHANALYST</div>
+          <div style="font-size:11px;color:var(--text3)">Análise de Adversário</div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- TOAST -->
@@ -2140,182 +2215,107 @@ function exportDetailPDF() {
   if (a) generatePDF(a);
 }
 
-// ── HEATMAP CANVAS ──
-function buildHeatmapCanvas(events) {
-  const CW = 700, CH = 460;
-  const cvs = document.createElement('canvas');
-  cvs.width = CW; cvs.height = CH;
-  const ctx = cvs.getContext('2d');
-
-  // Pitch — alternating green stripes
-  const stripes = 10;
-  const sw = CW / stripes;
-  for (let i = 0; i < stripes; i++) {
-    ctx.fillStyle = i % 2 === 0 ? '#2d6b2d' : '#2a622a';
-    ctx.fillRect(i * sw, 0, sw, CH);
-  }
-
-  // Heatmap blobs — paint each event as a radial gradient
-  const radius = Math.min(CW, CH) * 0.13;
-  if (events && events.length) {
-    // Blend mode for realistic heat layering
-    ctx.globalCompositeOperation = 'screen';
-    events.forEach(ev => {
-      const px = (parseFloat(ev.x) / 100) * CW;
-      const py = (parseFloat(ev.y) / 100) * CH;
-      // Heat colour by event type — matches what user sees on pitch map
-      const heatColors = {
-        golo:        [[255,220,0],[255,100,0],[180,0,0]],
-        remate:      [[180,220,255],[60,140,255],[0,40,200]],
-        perigo:      [[255,180,100],[255,80,0],[180,0,0]],
-        recuperacao: [[180,255,200],[0,200,100],[0,100,50]],
-        pressao:     [[220,180,255],[140,80,255],[80,0,200]],
-        livre:       [[255,220,120],[255,160,0],[180,80,0]],
-        substituicao:[[200,220,240],[100,150,200],[40,80,140]],
-        cartao:      [[255,180,180],[255,60,60],[180,0,0]]
-      };
-      const cols = heatColors[ev.type] || heatColors.golo;
-      const grad = ctx.createRadialGradient(px, py, 0, px, py, radius);
-      grad.addColorStop(0,   `rgba(${cols[2][0]},${cols[2][1]},${cols[2][2]},0.95)`);
-      grad.addColorStop(0.25,`rgba(${cols[1][0]},${cols[1][1]},${cols[1][2]},0.75)`);
-      grad.addColorStop(0.6, `rgba(${cols[0][0]},${cols[0][1]},${cols[0][2]},0.4)`);
-      grad.addColorStop(1,   `rgba(${cols[0][0]},${cols[0][1]},${cols[0][2]},0)`);
-      ctx.fillStyle = grad;
-      ctx.beginPath(); ctx.arc(px, py, radius, 0, Math.PI*2); ctx.fill();
-    });
-    ctx.globalCompositeOperation = 'source-over';
-  }
-
-  // Pitch lines on top
-  ctx.strokeStyle = 'rgba(255,255,255,0.75)';
-  ctx.lineWidth = 2;
-  const M = 10;
-  // border
-  ctx.strokeRect(M, M, CW-M*2, CH-M*2);
-  // halfway
-  ctx.beginPath(); ctx.moveTo(CW/2, M); ctx.lineTo(CW/2, CH-M); ctx.stroke();
-  // centre circle
-  ctx.beginPath(); ctx.arc(CW/2, CH/2, CW*0.1, 0, Math.PI*2); ctx.stroke();
-  ctx.fillStyle = 'rgba(255,255,255,0.7)';
-  ctx.beginPath(); ctx.arc(CW/2, CH/2, 4, 0, Math.PI*2); ctx.fill();
-  // left penalty area
-  const paW = CW*0.155, paH = CH*0.48, paY = (CH-paH)/2;
-  ctx.strokeRect(M, paY, paW, paH);
-  // right penalty area
-  ctx.strokeRect(CW-M-paW, paY, paW, paH);
-  // left small area
-  const saW = CW*0.055, saH = CH*0.26, saY = (CH-saH)/2;
-  ctx.strokeRect(M, saY, saW, saH);
-  // right small area
-  ctx.strokeRect(CW-M-saW, saY, saW, saH);
-  // left goal
-  ctx.strokeStyle = 'rgba(255,255,255,0.9)';
-  const gH = CH*0.14, gY = (CH-gH)/2;
-  ctx.strokeRect(M-8, gY, 8, gH);
-  // right goal
-  ctx.strokeRect(CW-M, gY, 8, gH);
-  // penalty spots
-  ctx.fillStyle = 'rgba(255,255,255,0.7)';
-  ctx.beginPath(); ctx.arc(M + CW*0.115, CH/2, 3, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.arc(CW-M - CW*0.115, CH/2, 3, 0, Math.PI*2); ctx.fill();
-  // penalty arcs
-  ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.arc(M + CW*0.115, CH/2, CW*0.1, -Math.PI*0.35, Math.PI*0.35); ctx.stroke();
-  ctx.beginPath(); ctx.arc(CW-M - CW*0.115, CH/2, CW*0.1, Math.PI*0.65, Math.PI*1.35); ctx.stroke();
-  // corner arcs
-  ctx.lineWidth = 1.5;
-  [[M,M],[CW-M,M],[M,CH-M],[CW-M,CH-M]].forEach(([cx,cy]) => {
-    ctx.beginPath(); ctx.arc(cx, cy, 12, 0, Math.PI*2); ctx.stroke();
-  });
-
-  // Event dots on top for clarity
-  if (events && events.length) {
-    const dotColors = {
-      golo:'#e8c42a', remate:'#4a9eff', perigo:'#e85d4a',
-      recuperacao:'#3ecf8e', pressao:'#a78bfa', livre:'#f0a500',
-      substituicao:'#64748b', cartao:'#ff6b6b'
-    };
-    events.forEach(ev => {
-      const px = (parseFloat(ev.x) / 100) * CW;
-      const py = (parseFloat(ev.y) / 100) * CH;
-      ctx.fillStyle = dotColors[ev.type] || '#fff';
-      ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI*2); ctx.fill();
-      ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 1.5;
-      ctx.stroke();
-    });
-  }
-
-  return cvs;
-}
-
-// ── PDF LEGEND HELPER ──
-function pdfLegendRow(doc, x, y, color, label, count) {
-  doc.setFillColor(...color);
-  doc.circle(x + 2, y - 1.5, 2, 'F');
-  doc.setTextColor(60, 60, 60);
-  doc.setFontSize(8);
-  doc.text(`${label} (${count})`, x + 6, y);
-}
-
 // ── GENERATE PDF ──
 function generatePDF(data) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const W = 210; const M = 14;
 
-  // ── PAGE 1: CAPA / HEADER ──────────────────────────
-  // Dark accent bar top
-  doc.setFillColor(14, 20, 38);
-  doc.rect(0, 0, W, 44, 'F');
+  // ── READ CURRENT ACCENT COLOUR FROM CSS ──────────
+  const rootStyle  = getComputedStyle(document.documentElement);
+  const accentHex  = rootStyle.getPropertyValue('--accent').trim() || '#e8c42a';
+  function hexToRgb(h) {
+    const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(h.replace('#','').padStart(6,'0'));
+    return r ? [parseInt(r[1],16), parseInt(r[2],16), parseInt(r[3],16)] : [232,196,42];
+  }
+  const [aR,aG,aB] = hexToRgb(accentHex);
+  const isDark = (aR*.299 + aG*.587 + aB*.114) < 128;
+  const txtOnAccent = isDark ? [255,255,255] : [14,20,38];
 
-  // Gold accent line
-  doc.setFillColor(232, 196, 42);
-  doc.rect(0, 44, W, 2, 'F');
+  // ── PAGE 1: COVER HEADER ──────────────────────────
+  // Full-width dark header
+  doc.setFillColor(10, 14, 26);
+  doc.rect(0, 0, W, 52, 'F');
 
-  // Logo text
+  // Diagonal accent shape (design element)
+  doc.setFillColor(aR, aG, aB);
+  doc.rect(0, 52, W, 3, 'F');
+
+  // Left accent stripe
+  doc.setFillColor(aR, aG, aB);
+  doc.rect(0, 0, 4, 52, 'F');
+
+  // Logo
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(20);
-  doc.setTextColor(232, 196, 42);
-  doc.text('MATCHANALYST PRO', M, 16);
+  doc.setFontSize(22);
+  doc.setTextColor(aR, aG, aB);
+  doc.text('MATCHANALYST', M + 4, 17);
+  doc.setFontSize(11);
+  doc.setTextColor(180, 195, 220);
+  doc.text('PRO  ·  Relatório de Análise', M + 4, 26);
 
-  // Subtitle
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(160, 175, 200);
-  doc.text('Relatório de Análise de Jogo', M, 24);
+  // Divider inside header
+  doc.setDrawColor(40, 55, 90);
+  doc.setLineWidth(0.4);
+  doc.line(M + 4, 31, W - M, 31);
 
-  // Match title
+  // Match line
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
-  doc.setTextColor(255, 255, 255);
-  const matchTitle = `${data.casa || '?'}  vs  ${data.fora || '?'}`;
-  doc.text(matchTitle, M, 37);
+  doc.setFontSize(15);
+  doc.setTextColor(245, 247, 252);
+  const matchTitle = `${data.casa || '?'}`;
+  const vsLabel    = '  vs  ';
+  const awayLabel  = `${data.fora || '?'}`;
+  doc.text(matchTitle, M + 4, 44);
+  const homeW = doc.getTextWidth(matchTitle);
+  doc.setTextColor(aR, aG, aB);
+  doc.text(vsLabel, M + 4 + homeW, 44);
+  const vsW = doc.getTextWidth(vsLabel);
+  doc.setTextColor(245, 247, 252);
+  doc.text(awayLabel, M + 4 + homeW + vsW, 44);
 
-  // Result badge
+  // Result pill
   if (data.resultado) {
-    const resultW = 22;
-    doc.setFillColor(232, 196, 42);
-    doc.roundedRect(W - M - resultW, 29, resultW, 10, 2, 2, 'F');
-    doc.setTextColor(14, 20, 38);
+    const rw = doc.getTextWidth(data.resultado) + 10;
+    doc.setFillColor(aR, aG, aB);
+    doc.roundedRect(W - M - rw, 36, rw, 11, 2, 2, 'F');
+    doc.setTextColor(...txtOnAccent);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
-    const rx = W - M - resultW + (resultW - doc.getTextWidth(data.resultado)) / 2;
-    doc.text(data.resultado, rx, 37);
+    doc.setFontSize(13);
+    doc.text(data.resultado, W - M - rw/2, 44, { align: 'center' });
   }
 
-  let y = 54;
+  // Metadata strip below header
+  doc.setFillColor(240, 242, 248);
+  doc.rect(0, 55, W, 10, 'F');
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(90, 100, 130);
+  const metaParts = [data.competicao, data.data, data.analista ? `Analista: ${data.analista}` : null].filter(Boolean);
+  doc.text(metaParts.join('  ·  '), M + 4, 61.5);
+  // Type badge
+  const tipoBadge = (data.tipo || 'análise').toUpperCase();
+  const badgeW = doc.getTextWidth(tipoBadge) + 6;
+  doc.setFillColor(aR, aG, aB);
+  doc.roundedRect(W - M - badgeW, 56, badgeW, 8, 1, 1, 'F');
+  doc.setTextColor(...txtOnAccent);
+  doc.setFontSize(7);
+  doc.text(tipoBadge, W - M - badgeW/2, 61, { align: 'center' });
 
-  // ── SECTION HELPER (light theme) ──────────────────
+  let y = 72;
+
+  // ── SECTION HELPER (accent colour) ────────────────
   function section(title) {
-    doc.setFillColor(240, 242, 248);
-    doc.rect(M, y, W - M*2, 7, 'F');
-    doc.setFillColor(232, 196, 42);
-    doc.rect(M, y, 3, 7, 'F');
+    doc.setFillColor(aR, aG, aB, 0.12);
+    doc.setFillColor(235, 238, 248);
+    doc.rect(M, y, W - M*2, 7.5, 'F');
+    doc.setFillColor(aR, aG, aB);
+    doc.rect(M, y, 3.5, 7.5, 'F');
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
-    doc.setTextColor(30, 40, 70);
-    doc.text(title.toUpperCase(), M + 6, y + 5);
-    y += 11;
+    doc.setTextColor(aR, aG, aB);
+    doc.text(title.toUpperCase(), M + 7, y + 5.2);
+    y += 12;
   }
 
   function row(label, value) {
@@ -2429,19 +2429,21 @@ function generatePDF(data) {
   if (data.pitch_events && data.pitch_events.length > 0) {
     doc.addPage();
 
-    // Page header
-    doc.setFillColor(14, 20, 38);
-    doc.rect(0, 0, W, 16, 'F');
-    doc.setFillColor(232, 196, 42);
-    doc.rect(0, 16, W, 1.5, 'F');
+    // Page 2 header
+    doc.setFillColor(10, 14, 26);
+    doc.rect(0, 0, W, 18, 'F');
+    doc.setFillColor(aR, aG, aB);
+    doc.rect(0, 18, W, 2, 'F');
+    doc.setFillColor(aR, aG, aB);
+    doc.rect(0, 0, 4, 18, 'F');
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
-    doc.setTextColor(232, 196, 42);
-    doc.text('MAPA DE EVENTOS — HEATMAP', M, 11);
+    doc.setTextColor(aR, aG, aB);
+    doc.text('MAPA DE EVENTOS — HEATMAP', M + 4, 12);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(160, 175, 200);
-    doc.text(`${data.casa || '?'} vs ${data.fora || '?'}  ·  ${data.pitch_events.length} eventos`, W - M, 11, { align: 'right' });
+    doc.text(`${data.casa || '?'} vs ${data.fora || '?'}  ·  ${data.pitch_events.length} eventos`, W - M, 12, { align: 'right' });
 
     // Generate heatmap canvas
     const hmCanvas = buildHeatmapCanvas(data.pitch_events);
@@ -2513,7 +2515,7 @@ function generatePDF(data) {
         if (count === 0) return;
         const segW = (count / totalEvents) * barW;
         doc.setFillColor(...item.color);
-        doc.rect(bx, barY + 3, segW, barH, 'F');
+        doc.roundedRect(bx, barY + 3, segW, barH, 1, 1, 'F');
         bx += segW;
       });
       doc.setDrawColor(200, 210, 230);
@@ -2526,16 +2528,16 @@ function generatePDF(data) {
   const totalPages = doc.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
-    doc.setFillColor(240, 242, 248);
-    doc.rect(0, 287, W, 10, 'F');
-    doc.setDrawColor(220, 225, 235);
-    doc.setLineWidth(0.3);
-    doc.line(0, 287, W, 287);
+    doc.setFillColor(10, 14, 26);
+    doc.rect(0, 285, W, 12, 'F');
+    doc.setFillColor(aR, aG, aB);
+    doc.rect(0, 285, W, 1.5, 'F');
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7);
-    doc.setTextColor(130, 140, 160);
-    doc.text('MatchAnalyst Pro  ·  ' + new Date().toLocaleDateString('pt-PT'), M, 293);
-    doc.text(`${i} / ${totalPages}`, W - M, 293, { align: 'right' });
+    doc.setTextColor(130, 145, 175);
+    doc.text('MatchAnalyst Pro  ·  ' + new Date().toLocaleDateString('pt-PT'), M, 292);
+    doc.setTextColor(aR, aG, aB);
+    doc.text(`${i} / ${totalPages}`, W - M, 292, { align: 'right' });
   }
 
   doc.save(`matchanalyst_${(data.casa||'analise').replace(/\s+/g,'_')}_vs_${(data.fora||'adversario').replace(/\s+/g,'_')}.pdf`);
@@ -2673,7 +2675,71 @@ document.addEventListener('keydown', e => {
   }
 });
 
+// ── THEME SYSTEM ──
+const ACCENT_MAP = {
+  gold:   { accent: '#e8c42a', accent2: '#f0a500' },
+  blue:   { accent: '#4a9eff', accent2: '#2d7fe0' },
+  green:  { accent: '#3ecf8e', accent2: '#29b876' },
+  purple: { accent: '#a78bfa', accent2: '#8b6ef0' },
+  red:    { accent: '#e85d4a', accent2: '#d04030' },
+};
+
+let currentMode   = localStorage.getItem('map_mode')   || 'dark';
+let currentAccent = localStorage.getItem('map_accent') || 'gold';
+
+function applyTheme() {
+  const root = document.documentElement;
+  // Mode
+  if (currentMode === 'light') {
+    root.setAttribute('data-theme', 'light');
+  } else {
+    root.removeAttribute('data-theme');
+  }
+  // Accent
+  const acc = ACCENT_MAP[currentAccent] || ACCENT_MAP.gold;
+  root.style.setProperty('--accent',  acc.accent);
+  root.style.setProperty('--accent2', acc.accent2);
+  // Update modal UI state
+  document.querySelectorAll('.theme-mode-btn').forEach(b => {
+    b.style.borderWidth = '1px';
+    b.style.borderColor = 'var(--border)';
+    b.style.color = 'var(--text2)';
+  });
+  const activeBtn = document.getElementById('btn-' + currentMode);
+  if (activeBtn) {
+    activeBtn.style.borderWidth = '2px';
+    activeBtn.style.borderColor = acc.accent;
+    activeBtn.style.color = 'var(--text)';
+  }
+  document.querySelectorAll('.accent-btn').forEach(b => {
+    b.style.borderWidth = '2px';
+    b.style.borderColor = 'transparent';
+    b.style.transform = 'scale(1)';
+  });
+  const activeAcc = document.getElementById('acc-' + currentAccent);
+  if (activeAcc) {
+    activeAcc.style.borderColor = '#fff';
+    activeAcc.style.transform = 'scale(1.1)';
+  }
+  // Update nav label colour
+  const themeLbl = document.getElementById('theme-label');
+  if (themeLbl) themeLbl.style.color = acc.accent;
+}
+
+function setMode(mode) {
+  currentMode = mode;
+  localStorage.setItem('map_mode', mode);
+  applyTheme();
+}
+
+function setAccent(accent) {
+  currentAccent = accent;
+  localStorage.setItem('map_accent', accent);
+  applyTheme();
+}
+
 // ── START ──
+applyTheme();
 init();
 </script>
 
