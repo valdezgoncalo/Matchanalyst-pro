@@ -475,7 +475,7 @@
     </div>
     <button class="btn-auth" id="auth-btn">ENTRAR</button>
     <div class="auth-toggle" id="auth-toggle-text">
-      Não tens conta? <span id="auth-toggle-link" onclick="toggleAuthMode()">Registar</span>
+      Não tens conta? <span id="auth-toggle-link" class="auth-toggle-link-btn">Registar</span>
     </div>
   </div>
 </div>
@@ -1093,7 +1093,7 @@
 const SUPABASE_URL = 'https://gcsaexbreamdzkdhibjw.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdjc2FleGJyZWFtZHprZGhpYmp3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1ODAyNjksImV4cCI6MjA5NDE1NjI2OX0.TWs_eI0i1cKmqEZiIMYcjORPhHQLR8wR34QAoNNvC0Y';
 
-let supabase = null;
+let sbClient = null;
 let currentUser = null;
 let analyses = [];
 let pipelineItems = [];
@@ -1124,14 +1124,14 @@ const KANBAN_COLS = [
 // ── INIT ──
 async function init() {
   try {
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   } catch(e) {
     console.error('Supabase init error:', e);
     showAuth();
     return;
   }
 
-  supabase.auth.onAuthStateChange((event, session) => {
+  sbClient.auth.onAuthStateChange((event, session) => {
     if (event === 'SIGNED_IN' && session) {
       currentUser = session.user;
       showApp();
@@ -1143,7 +1143,7 @@ async function init() {
   });
 
   try {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await sbClient.auth.getSession();
     if (session) {
       currentUser = session.user;
       showApp();
@@ -1196,10 +1196,14 @@ function toggleAuthMode() {
   document.getElementById('auth-btn').textContent = authMode === 'login' ? 'ENTRAR' : 'REGISTAR';
   document.getElementById('auth-name-wrap').style.display = authMode === 'register' ? 'block' : 'none';
   document.getElementById('auth-toggle-text').innerHTML = authMode === 'login'
-    ? 'Não tens conta? <span id="auth-toggle-link" onclick="toggleAuthMode()">Registar</span>'
-    : 'Já tens conta? <span id="auth-toggle-link" onclick="toggleAuthMode()">Entrar</span>';
+    ? 'Não tens conta? <span class="auth-toggle-link-btn" style="color:var(--accent);cursor:pointer">Registar</span>'
+    : 'Já tens conta? <span class="auth-toggle-link-btn" style="color:var(--accent);cursor:pointer">Entrar</span>';
   document.getElementById('auth-error').style.display = 'none';
 }
+// Event delegation - survives innerHTML replacement
+document.getElementById('auth-toggle-text').addEventListener('click', function(e) {
+  if (e.target.classList.contains('auth-toggle-link-btn')) toggleAuthMode();
+});
 
 async function handleAuth() {
   const email = document.getElementById('auth-email').value.trim();
@@ -1219,11 +1223,11 @@ async function handleAuth() {
 
   try {
     if (authMode === 'login') {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
+      const { data, error } = await sbClient.auth.signInWithPassword({ email, password: pass });
       if (error) throw error;
     } else {
       const name = document.getElementById('auth-name').value.trim();
-      const { data, error } = await supabase.auth.signUp({
+      const { data, error } = await sbClient.auth.signUp({
         email,
         password: pass,
         options: { data: { name }, emailRedirectTo: window.location.href }
@@ -1249,7 +1253,7 @@ async function handleAuth() {
 document.getElementById('auth-btn').addEventListener('click', handleAuth);
 
 async function logout() {
-  if (supabase) await supabase.auth.signOut();
+  if (sbClient) await sbClient.auth.signOut();
   analyses = []; pipelineItems = [];
   showAuth();
 }
@@ -1263,8 +1267,8 @@ async function loadData() {
   }
   try {
     const [{ data: a }, { data: p }] = await Promise.all([
-      supabase.from('map_analyses').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false }),
-      supabase.from('map_pipeline').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false })
+      sbClient.from('map_analyses').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false }),
+      sbClient.from('map_pipeline').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false })
     ]);
     analyses = a || [];
     pipelineItems = p || [];
@@ -1514,8 +1518,8 @@ async function saveAnalysis() {
 
   if (editingAnalysisId) {
     record.id = editingAnalysisId;
-    if (supabase && currentUser) {
-      const { error } = await supabase.from('map_analyses').update(record).eq('id', editingAnalysisId);
+    if (sbClient && currentUser) {
+      const { error } = await sbClient.from('map_analyses').update(record).eq('id', editingAnalysisId);
       if (error) { showToast('Erro ao actualizar: ' + error.message, 'error'); return; }
     }
     const idx = analyses.findIndex(a => a.id === editingAnalysisId);
@@ -1523,8 +1527,8 @@ async function saveAnalysis() {
     editingAnalysisId = null;
   } else {
     record.id = crypto.randomUUID();
-    if (supabase && currentUser) {
-      const { data: saved, error } = await supabase.from('map_analyses').insert(record).select().single();
+    if (sbClient && currentUser) {
+      const { data: saved, error } = await sbClient.from('map_analyses').insert(record).select().single();
       if (error) { showToast('Erro ao guardar: ' + error.message, 'error'); return; }
       if (saved) record.id = saved.id;
     }
@@ -1590,8 +1594,8 @@ function loadAnalysisForEdit() {
 async function deleteCurrentAnalysis() {
   if (!currentAnalysisId) return;
   if (!confirm('Eliminar esta análise?')) return;
-  if (supabase && currentUser) {
-    await supabase.from('map_analyses').delete().eq('id', currentAnalysisId);
+  if (sbClient && currentUser) {
+    await sbClient.from('map_analyses').delete().eq('id', currentAnalysisId);
   }
   analyses = analyses.filter(a => a.id !== currentAnalysisId);
   saveLocal();
@@ -1782,8 +1786,8 @@ async function savePipelineItem() {
     user_id: currentUser?.id || 'offline',
     created_at: new Date().toISOString()
   };
-  if (supabase && currentUser) {
-    const { data: saved, error } = await supabase.from('map_pipeline').insert(item).select().single();
+  if (sbClient && currentUser) {
+    const { data: saved, error } = await sbClient.from('map_pipeline').insert(item).select().single();
     if (error) { showToast('Erro: ' + error.message, 'error'); return; }
     if (saved) item.id = saved.id;
   }
@@ -1802,7 +1806,7 @@ async function movePipelineItem(id) {
   const idx = cols.indexOf(item.estado);
   const next = cols[(idx + 1) % cols.length];
   item.estado = next;
-  if (supabase && currentUser) await supabase.from('map_pipeline').update({ estado: next }).eq('id', id);
+  if (sbClient && currentUser) await sbClient.from('map_pipeline').update({ estado: next }).eq('id', id);
   saveLocal();
   renderKanban();
 }
