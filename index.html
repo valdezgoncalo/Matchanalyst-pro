@@ -2140,116 +2140,513 @@ function exportDetailPDF() {
   if (a) generatePDF(a);
 }
 
+// ── HEATMAP CANVAS ──
+function buildHeatmapCanvas(events) {
+  const CW = 700, CH = 460;
+  const cvs = document.createElement('canvas');
+  cvs.width = CW; cvs.height = CH;
+  const ctx = cvs.getContext('2d');
+
+  // Pitch — alternating green stripes
+  const stripes = 10;
+  const sw = CW / stripes;
+  for (let i = 0; i < stripes; i++) {
+    ctx.fillStyle = i % 2 === 0 ? '#2d6b2d' : '#2a622a';
+    ctx.fillRect(i * sw, 0, sw, CH);
+  }
+
+  // Heatmap blobs — paint each event as a radial gradient
+  const radius = Math.min(CW, CH) * 0.13;
+  if (events && events.length) {
+    // Blend mode for realistic heat layering
+    ctx.globalCompositeOperation = 'screen';
+    events.forEach(ev => {
+      const px = (parseFloat(ev.x) / 100) * CW;
+      const py = (parseFloat(ev.y) / 100) * CH;
+      // Heat colour by event type — matches what user sees on pitch map
+      const heatColors = {
+        golo:        [[255,220,0],[255,100,0],[180,0,0]],
+        remate:      [[180,220,255],[60,140,255],[0,40,200]],
+        perigo:      [[255,180,100],[255,80,0],[180,0,0]],
+        recuperacao: [[180,255,200],[0,200,100],[0,100,50]],
+        pressao:     [[220,180,255],[140,80,255],[80,0,200]],
+        livre:       [[255,220,120],[255,160,0],[180,80,0]],
+        substituicao:[[200,220,240],[100,150,200],[40,80,140]],
+        cartao:      [[255,180,180],[255,60,60],[180,0,0]]
+      };
+      const cols = heatColors[ev.type] || heatColors.golo;
+      const grad = ctx.createRadialGradient(px, py, 0, px, py, radius);
+      grad.addColorStop(0,   `rgba(${cols[2][0]},${cols[2][1]},${cols[2][2]},0.95)`);
+      grad.addColorStop(0.25,`rgba(${cols[1][0]},${cols[1][1]},${cols[1][2]},0.75)`);
+      grad.addColorStop(0.6, `rgba(${cols[0][0]},${cols[0][1]},${cols[0][2]},0.4)`);
+      grad.addColorStop(1,   `rgba(${cols[0][0]},${cols[0][1]},${cols[0][2]},0)`);
+      ctx.fillStyle = grad;
+      ctx.beginPath(); ctx.arc(px, py, radius, 0, Math.PI*2); ctx.fill();
+    });
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  // Pitch lines on top
+  ctx.strokeStyle = 'rgba(255,255,255,0.75)';
+  ctx.lineWidth = 2;
+  const M = 10;
+  // border
+  ctx.strokeRect(M, M, CW-M*2, CH-M*2);
+  // halfway
+  ctx.beginPath(); ctx.moveTo(CW/2, M); ctx.lineTo(CW/2, CH-M); ctx.stroke();
+  // centre circle
+  ctx.beginPath(); ctx.arc(CW/2, CH/2, CW*0.1, 0, Math.PI*2); ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  ctx.beginPath(); ctx.arc(CW/2, CH/2, 4, 0, Math.PI*2); ctx.fill();
+  // left penalty area
+  const paW = CW*0.155, paH = CH*0.48, paY = (CH-paH)/2;
+  ctx.strokeRect(M, paY, paW, paH);
+  // right penalty area
+  ctx.strokeRect(CW-M-paW, paY, paW, paH);
+  // left small area
+  const saW = CW*0.055, saH = CH*0.26, saY = (CH-saH)/2;
+  ctx.strokeRect(M, saY, saW, saH);
+  // right small area
+  ctx.strokeRect(CW-M-saW, saY, saW, saH);
+  // left goal
+  ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+  const gH = CH*0.14, gY = (CH-gH)/2;
+  ctx.strokeRect(M-8, gY, 8, gH);
+  // right goal
+  ctx.strokeRect(CW-M, gY, 8, gH);
+  // penalty spots
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  ctx.beginPath(); ctx.arc(M + CW*0.115, CH/2, 3, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(CW-M - CW*0.115, CH/2, 3, 0, Math.PI*2); ctx.fill();
+  // penalty arcs
+  ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(M + CW*0.115, CH/2, CW*0.1, -Math.PI*0.35, Math.PI*0.35); ctx.stroke();
+  ctx.beginPath(); ctx.arc(CW-M - CW*0.115, CH/2, CW*0.1, Math.PI*0.65, Math.PI*1.35); ctx.stroke();
+  // corner arcs
+  ctx.lineWidth = 1.5;
+  [[M,M],[CW-M,M],[M,CH-M],[CW-M,CH-M]].forEach(([cx,cy]) => {
+    ctx.beginPath(); ctx.arc(cx, cy, 12, 0, Math.PI*2); ctx.stroke();
+  });
+
+  // Event dots on top for clarity
+  if (events && events.length) {
+    const dotColors = {
+      golo:'#e8c42a', remate:'#4a9eff', perigo:'#e85d4a',
+      recuperacao:'#3ecf8e', pressao:'#a78bfa', livre:'#f0a500',
+      substituicao:'#64748b', cartao:'#ff6b6b'
+    };
+    events.forEach(ev => {
+      const px = (parseFloat(ev.x) / 100) * CW;
+      const py = (parseFloat(ev.y) / 100) * CH;
+      ctx.fillStyle = dotColors[ev.type] || '#fff';
+      ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 1.5;
+      ctx.stroke();
+    });
+  }
+
+  return cvs;
+}
+
+// ── PDF LEGEND HELPER ──
+function pdfLegendRow(doc, x, y, color, label, count) {
+  doc.setFillColor(...color);
+  doc.circle(x + 2, y - 1.5, 2, 'F');
+  doc.setTextColor(60, 60, 60);
+  doc.setFontSize(8);
+  doc.text(`${label} (${count})`, x + 6, y);
+}
+
+// ── GENERATE PDF ──
 function generatePDF(data) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const W = 210; const margin = 16;
+  const W = 210; const M = 14;
 
-  // Header
-  doc.setFillColor(10, 14, 26);
-  doc.rect(0, 0, W, 40, 'F');
-  doc.setTextColor(232, 196, 42);
-  doc.setFontSize(24);
+  // ── PAGE 1: CAPA / HEADER ──────────────────────────
+  // Dark accent bar top
+  doc.setFillColor(14, 20, 38);
+  doc.rect(0, 0, W, 44, 'F');
+
+  // Gold accent line
+  doc.setFillColor(232, 196, 42);
+  doc.rect(0, 44, W, 2, 'F');
+
+  // Logo text
   doc.setFont('helvetica', 'bold');
-  doc.text('MATCHANALYST PRO', margin, 18);
-  doc.setFontSize(10);
-  doc.setTextColor(139, 151, 181);
-  doc.text('Relatório de Análise de Jogo', margin, 26);
-  doc.setFontSize(12);
-  doc.setTextColor(255,255,255);
-  doc.text(`${data.casa || '?'} vs ${data.fora || '?'}`, margin, 35);
+  doc.setFontSize(20);
+  doc.setTextColor(232, 196, 42);
+  doc.text('MATCHANALYST PRO', M, 16);
+
+  // Subtitle
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(160, 175, 200);
+  doc.text('Relatório de Análise de Jogo', M, 24);
+
+  // Match title
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.setTextColor(255, 255, 255);
+  const matchTitle = `${data.casa || '?'}  vs  ${data.fora || '?'}`;
+  doc.text(matchTitle, M, 37);
+
+  // Result badge
   if (data.resultado) {
+    const resultW = 22;
+    doc.setFillColor(232, 196, 42);
+    doc.roundedRect(W - M - resultW, 29, resultW, 10, 2, 2, 'F');
+    doc.setTextColor(14, 20, 38);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(16);
-    doc.setTextColor(232, 196, 42);
-    doc.text(data.resultado, W - margin - doc.getTextWidth(data.resultado) * 16/doc.internal.scaleFactor + 10, 35);
+    doc.setFontSize(12);
+    const rx = W - M - resultW + (resultW - doc.getTextWidth(data.resultado)) / 2;
+    doc.text(data.resultado, rx, 37);
   }
 
-  let y = 52;
-  const lineH = 7;
+  let y = 54;
 
+  // ── SECTION HELPER (light theme) ──────────────────
   function section(title) {
-    doc.setFillColor(26, 34, 53);
-    doc.rect(margin, y - 5, W - margin*2, 8, 'F');
-    doc.setTextColor(232, 196, 42);
-    doc.setFontSize(10);
+    doc.setFillColor(240, 242, 248);
+    doc.rect(M, y, W - M*2, 7, 'F');
+    doc.setFillColor(232, 196, 42);
+    doc.rect(M, y, 3, 7, 'F');
     doc.setFont('helvetica', 'bold');
-    doc.text(title.toUpperCase(), margin + 3, y + 0.5);
-    y += lineH;
+    doc.setFontSize(9);
+    doc.setTextColor(30, 40, 70);
+    doc.text(title.toUpperCase(), M + 6, y + 5);
+    y += 11;
   }
 
   function row(label, value) {
-    if (!value) return;
-    doc.setTextColor(139, 151, 181);
-    doc.setFontSize(9);
+    if (value === null || value === undefined || value === '') return;
     doc.setFont('helvetica', 'normal');
-    doc.text(label + ':', margin + 3, y);
-    doc.setTextColor(232, 234, 242);
-    doc.text(String(value), margin + 70, y);
-    y += lineH - 1;
-    if (y > 270) { doc.addPage(); y = 20; }
+    doc.setFontSize(9);
+    doc.setTextColor(110, 120, 145);
+    doc.text(label + ':', M + 2, y);
+    doc.setTextColor(30, 40, 70);
+    doc.setFont('helvetica', 'bold');
+    const lines = doc.splitTextToSize(String(value), W - M*2 - 58);
+    doc.text(lines[0], M + 58, y);
+    y += 6;
+    if (y > 272) { doc.addPage(); y = 16; }
   }
 
   function multiline(label, value) {
     if (!value) return;
-    doc.setTextColor(139, 151, 181);
+    doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    doc.text(label + ':', margin + 3, y);
+    doc.setTextColor(110, 120, 145);
+    doc.text(label + ':', M + 2, y);
     y += 5;
-    doc.setTextColor(232, 234, 242);
-    const lines = doc.splitTextToSize(String(value), W - margin*2 - 6);
-    lines.forEach(line => { doc.text(line, margin + 6, y); y += 5; if (y > 270) { doc.addPage(); y = 20; } });
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(30, 40, 70);
+    const lines = doc.splitTextToSize(String(value), W - M*2 - 6);
+    lines.forEach(line => {
+      doc.text(line, M + 4, y);
+      y += 5;
+      if (y > 272) { doc.addPage(); y = 16; }
+    });
     y += 2;
   }
 
+  function divider() {
+    doc.setDrawColor(220, 225, 235);
+    doc.setLineWidth(0.3);
+    doc.line(M, y, W - M, y);
+    y += 4;
+  }
+
+  // ── INFO DO JOGO ──────────────────────────────────
   section('Informação do Jogo');
-  row('Tipo', data.tipo); row('Competição', data.competicao); row('Data', data.data);
-  row('Sistema Equipa', data.sistema); row('Sistema Adversário', data.sistema_adv);
+  row('Tipo de Análise', data.tipo);
+  row('Competição', data.competicao);
+  row('Data', data.data);
+  row('Sistema (Analisada)', data.sistema);
+  row('Sistema (Adversário)', data.sistema_adv);
   row('Analista', data.analista);
+  y += 2;
 
-  if (data.remates || data.estilo || data.cantos) {
-    y += 3; section('Estatísticas & Estilo');
-    row('Estilo Predominante', data.estilo);
-    row('Ritmo de Jogo', data.ritmo);
-    row('Amplitude Def / Of', [data.amplitude_def, data.amplitude_of].filter(Boolean).join(' · ') || null);
-    row('Remates / À Baliza', data.remates != null ? `${data.remates} total, ${data.remates_b ?? '-'} à baliza` : '');
-    row('Cantos / Faltas', (data.cantos != null || data.faltas != null) ? `${data.cantos ?? '-'} cantos, ${data.faltas ?? '-'} faltas` : '');
-    row('Passes / Precisão', data.passes != null ? `${data.passes} passes (${data.passes_p ?? '-'}%)` : '');
+  // ── ESTATÍSTICAS ──────────────────────────────────
+  if (data.remates != null || data.estilo || data.cantos != null) {
+    divider();
+    section('Estatísticas & Estilo');
+    if (data.estilo) row('Estilo Predominante', data.estilo);
+    if (data.ritmo)  row('Ritmo de Jogo', data.ritmo);
+    if (data.amplitude_def || data.amplitude_of) row('Amplitude Def / Of', [data.amplitude_def, data.amplitude_of].filter(Boolean).join('  ·  '));
+    if (data.remates != null) row('Remates / À Baliza', `${data.remates}  /  ${data.remates_b ?? '-'}`);
+    if (data.cantos  != null) row('Cantos / Faltas', `${data.cantos}  /  ${data.faltas ?? '-'}`);
+    if (data.passes  != null) row('Passes / Precisão', `${data.passes}  /  ${data.passes_p != null ? data.passes_p + '%' : '-'}`);
+    y += 2;
   }
 
-  if (data.padroes_ataque || data.notas_defesa) {
-    y += 3; section('Análise de Fases');
-    multiline('Ofensiva', data.padroes_ataque);
-    multiline('Defensiva', data.notas_defesa);
-    multiline('Trans. Ofensiva', data.trans_pos_notas);
-    multiline('Trans. Defensiva', data.trans_neg_notas);
+  // ── FASES DE JOGO ─────────────────────────────────
+  if (data.padroes_ataque || data.notas_defesa || data.trans_pos_notas || data.trans_neg_notas || data.livres) {
+    divider();
+    section('Análise de Fases');
+    if (data.est_ataque)    row('Estrutura Ofensiva', data.est_ataque);
+    if (data.zona_ataque)   row('Zona Preferencial', data.zona_ataque);
+    multiline('Organização Ofensiva', data.padroes_ataque);
+    if (data.bloco)         row('Bloco Defensivo', data.bloco);
+    if (data.pressao)       row('Tipo de Pressão', data.pressao);
+    multiline('Organização Defensiva', data.notas_defesa);
+    multiline('Transição Ofensiva', data.trans_pos_notas);
+    multiline('Transição Defensiva', data.trans_neg_notas);
+    if (data.cantos_of)     row('Cantos Ofensivos', data.cantos_of);
+    if (data.cantos_def)    row('Cantos Defensivos', data.cantos_def);
+    multiline('Bola Parada', data.livres);
+    y += 2;
   }
 
-  if (data.pontos_fortes || data.pontos_fracos) {
-    y += 3; section('Avaliação Qualitativa');
-    row('Rating Geral', data.rating_geral ? data.rating_geral + '/10' : '');
-    row('Táctica', data.rating_tatica ? data.rating_tatica + '/10' : '');
+  // ── AVALIAÇÃO ─────────────────────────────────────
+  if (data.rating_geral || data.pontos_fortes || data.pontos_fracos) {
+    divider();
+    section('Avaliação');
+    if (data.rating_geral)      row('Performance Geral',  `${data.rating_geral}/10`);
+    if (data.rating_tatica)     row('Performance Tática', `${data.rating_tatica}/10`);
+    if (data.rating_intensidade)row('Intensidade',        `${data.rating_intensidade}/10`);
+    if (data.rating_ofensiva)   row('Eficácia Ofensiva',  `${data.rating_ofensiva}/10`);
+    if (data.rating_defensiva)  row('Solidez Defensiva',  `${data.rating_defensiva}/10`);
+    y += 2;
     multiline('Pontos Fortes', data.pontos_fortes);
     multiline('Vulnerabilidades', data.pontos_fracos);
     multiline('Recomendações', data.recomendacoes);
+    multiline('Notas Gerais', data.notas);
+    y += 2;
   }
 
+  // ── PRÓXIMO CONFRONTO ─────────────────────────────
   if (data.proximo_data || data.proximo_plano) {
-    y += 3; section('Próximo Confronto');
-    row('Data', data.proximo_data); row('Local', data.proximo_local);
+    divider();
+    section('Próximo Confronto');
+    if (data.proximo_data)  row('Data', data.proximo_data);
+    if (data.proximo_local) row('Local', data.proximo_local);
     multiline('Plano', data.proximo_plano);
+    y += 2;
   }
 
-  // Footer
-  doc.setFillColor(10, 14, 26);
-  doc.rect(0, 287, W, 10, 'F');
-  doc.setTextColor(90, 106, 138);
-  doc.setFontSize(8);
-  doc.text('MatchAnalyst Pro · ' + new Date().toLocaleDateString('pt-PT'), margin, 294);
+  // ── PAGE 2: MAPA DE EVENTOS / HEATMAP ─────────────
+  if (data.pitch_events && data.pitch_events.length > 0) {
+    doc.addPage();
 
-  doc.save(`matchanalyst_${(data.casa||'analise').replace(/\s/g,'_')}_vs_${(data.fora||'adversario').replace(/\s/g,'_')}.pdf`);
+    // Page header
+    doc.setFillColor(14, 20, 38);
+    doc.rect(0, 0, W, 16, 'F');
+    doc.setFillColor(232, 196, 42);
+    doc.rect(0, 16, W, 1.5, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(232, 196, 42);
+    doc.text('MAPA DE EVENTOS — HEATMAP', M, 11);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(160, 175, 200);
+    doc.text(`${data.casa || '?'} vs ${data.fora || '?'}  ·  ${data.pitch_events.length} eventos`, W - M, 11, { align: 'right' });
+
+    // Generate heatmap canvas
+    const hmCanvas = buildHeatmapCanvas(data.pitch_events);
+    const hmImg = hmCanvas.toDataURL('image/png');
+
+    // Draw heatmap image centred on page
+    const hmW = W - M*2;
+    const hmH = hmW * (460/700);
+    const hmX = M;
+    const hmY = 22;
+    doc.addImage(hmImg, 'PNG', hmX, hmY, hmW, hmH);
+
+    // Rounded border around heatmap
+    doc.setDrawColor(200, 210, 230);
+    doc.setLineWidth(0.5);
+    doc.roundedRect(hmX, hmY, hmW, hmH, 2, 2);
+
+    // LEGEND
+    const legendY = hmY + hmH + 8;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(80, 90, 110);
+    doc.text('LEGENDA', M, legendY);
+
+    const legendItems = [
+      { color: [232,196,42],  label: 'Golo' },
+      { color: [74,158,255],  label: 'Remate' },
+      { color: [232,93,74],   label: 'Zona Perigosa' },
+      { color: [62,207,142],  label: 'Recuperação' },
+      { color: [167,139,250], label: 'Pressão' },
+      { color: [240,165,0],   label: 'Livre/Canto' },
+      { color: [100,116,139], label: 'Substituição' },
+      { color: [255,107,107], label: 'Cartão' },
+    ];
+
+    // Count per type
+    const evCounts = data.pitch_events.reduce((acc, e) => { acc[e.type] = (acc[e.type]||0)+1; return acc; }, {});
+    const typeMap = ['golo','remate','perigo','recuperacao','pressao','livre','substituicao','cartao'];
+
+    const colW = (W - M*2) / 4;
+    legendItems.forEach((item, i) => {
+      const col = i % 4;
+      const row2 = Math.floor(i / 4);
+      const lx = M + col * colW;
+      const ly = legendY + 6 + row2 * 8;
+      const count = evCounts[typeMap[i]] || 0;
+      if (count === 0) return;
+      doc.setFillColor(...item.color);
+      doc.circle(lx + 2, ly - 1.5, 2.5, 'F');
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(40, 50, 70);
+      doc.text(`${item.label} (${count})`, lx + 7, ly);
+    });
+
+    // Event type breakdown bar
+    const totalEvents = data.pitch_events.length;
+    if (totalEvents > 0) {
+      const barY = legendY + 26;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(80, 90, 110);
+      doc.text('DISTRIBUIÇÃO POR TIPO', M, barY);
+      const barW = W - M*2;
+      const barH = 6;
+      let bx = M;
+      legendItems.forEach((item, i) => {
+        const count = evCounts[typeMap[i]] || 0;
+        if (count === 0) return;
+        const segW = (count / totalEvents) * barW;
+        doc.setFillColor(...item.color);
+        doc.rect(bx, barY + 3, segW, barH, 'F');
+        bx += segW;
+      });
+      doc.setDrawColor(200, 210, 230);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(M, barY + 3, barW, barH, 1, 1);
+    }
+  }
+
+  // ── FOOTER em cada página ─────────────────────────
+  const totalPages = doc.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    doc.setFillColor(240, 242, 248);
+    doc.rect(0, 287, W, 10, 'F');
+    doc.setDrawColor(220, 225, 235);
+    doc.setLineWidth(0.3);
+    doc.line(0, 287, W, 287);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(130, 140, 160);
+    doc.text('MatchAnalyst Pro  ·  ' + new Date().toLocaleDateString('pt-PT'), M, 293);
+    doc.text(`${i} / ${totalPages}`, W - M, 293, { align: 'right' });
+  }
+
+  doc.save(`matchanalyst_${(data.casa||'analise').replace(/\s+/g,'_')}_vs_${(data.fora||'adversario').replace(/\s+/g,'_')}.pdf`);
   showToast('PDF exportado!', 'success');
+}
+
+// ── HEATMAP CANVAS BUILDER ──
+function buildHeatmapCanvas(events) {
+  const CW = 700, CH = 460;
+  const cvs = document.createElement('canvas');
+  cvs.width = CW; cvs.height = CH;
+  const ctx = cvs.getContext('2d');
+
+  // Alternating green stripes (like real pitch)
+  const stripes = 12;
+  const sw = CW / stripes;
+  for (let i = 0; i < stripes; i++) {
+    ctx.fillStyle = i % 2 === 0 ? '#2d6b2d' : '#266126';
+    ctx.fillRect(i * sw, 0, sw, CH);
+  }
+
+  // Heatmap layer — radial gradients per event
+  if (events && events.length) {
+    const radius = Math.min(CW, CH) * 0.13;
+
+    // Heat colour stops per event type: centre → mid → outer
+    const heatMap = {
+      golo:        [[255,255,180],[255,200,0],[200,100,0]],
+      remate:      [[200,230,255],[80,160,255],[0,60,200]],
+      perigo:      [[255,200,150],[255,100,0],[200,20,0]],
+      recuperacao: [[200,255,210],[0,220,100],[0,120,50]],
+      pressao:     [[230,210,255],[160,90,255],[90,0,200]],
+      livre:       [[255,240,160],[255,180,0],[180,80,0]],
+      substituicao:[[210,225,240],[110,160,210],[40,90,160]],
+      cartao:      [[255,200,200],[255,80,80],[180,0,0]]
+    };
+
+    ctx.globalCompositeOperation = 'screen';
+    events.forEach(ev => {
+      const px = (parseFloat(ev.x) / 100) * CW;
+      const py = (parseFloat(ev.y) / 100) * CH;
+      const cols = heatMap[ev.type] || heatMap.golo;
+      const grad = ctx.createRadialGradient(px, py, 0, px, py, radius);
+      grad.addColorStop(0,    `rgba(${cols[2][0]},${cols[2][1]},${cols[2][2]},1)`);
+      grad.addColorStop(0.3,  `rgba(${cols[1][0]},${cols[1][1]},${cols[1][2]},0.8)`);
+      grad.addColorStop(0.65, `rgba(${cols[0][0]},${cols[0][1]},${cols[0][2]},0.45)`);
+      grad.addColorStop(1,    `rgba(${cols[0][0]},${cols[0][1]},${cols[0][2]},0)`);
+      ctx.fillStyle = grad;
+      ctx.beginPath(); ctx.arc(px, py, radius, 0, Math.PI*2); ctx.fill();
+    });
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  // Pitch lines drawn OVER the heatmap
+  ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+  ctx.lineWidth = 2;
+  const Mb = 12;
+  ctx.strokeRect(Mb, Mb, CW-Mb*2, CH-Mb*2);
+  ctx.beginPath(); ctx.moveTo(CW/2, Mb); ctx.lineTo(CW/2, CH-Mb); ctx.stroke();
+  ctx.beginPath(); ctx.arc(CW/2, CH/2, CW*0.1, 0, Math.PI*2); ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,0.8)';
+  ctx.beginPath(); ctx.arc(CW/2, CH/2, 4, 0, Math.PI*2); ctx.fill();
+
+  const paW = CW*0.155, paH = CH*0.48, paY = (CH-paH)/2;
+  ctx.strokeRect(Mb, paY, paW, paH);
+  ctx.strokeRect(CW-Mb-paW, paY, paW, paH);
+  const saW = CW*0.055, saH = CH*0.26, saY2 = (CH-saH)/2;
+  ctx.strokeRect(Mb, saY2, saW, saH);
+  ctx.strokeRect(CW-Mb-saW, saY2, saW, saH);
+
+  // Goals
+  ctx.strokeStyle = 'rgba(255,255,255,0.95)';
+  ctx.lineWidth = 2.5;
+  const gH = CH*0.14, gY = (CH-gH)/2;
+  ctx.strokeRect(Mb-10, gY, 10, gH);
+  ctx.strokeRect(CW-Mb, gY, 10, gH);
+
+  // Penalty spots
+  ctx.fillStyle = 'rgba(255,255,255,0.8)';
+  ctx.beginPath(); ctx.arc(Mb + CW*0.115, CH/2, 3.5, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(CW-Mb - CW*0.115, CH/2, 3.5, 0, Math.PI*2); ctx.fill();
+
+  // Penalty arcs
+  ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(Mb + CW*0.115, CH/2, CW*0.1, -Math.PI*0.37, Math.PI*0.37); ctx.stroke();
+  ctx.beginPath(); ctx.arc(CW-Mb - CW*0.115, CH/2, CW*0.1, Math.PI*0.63, Math.PI*1.37); ctx.stroke();
+
+  // Corner arcs
+  ctx.lineWidth = 1.5;
+  [[Mb,Mb],[CW-Mb,Mb],[Mb,CH-Mb],[CW-Mb,CH-Mb]].forEach(([cx,cy]) => {
+    ctx.beginPath(); ctx.arc(cx, cy, 14, 0, Math.PI*2); ctx.stroke();
+  });
+
+  // Event dots on top for precision reading
+  if (events && events.length) {
+    const dotCol = {
+      golo:'#e8c42a', remate:'#4a9eff', perigo:'#e85d4a',
+      recuperacao:'#3ecf8e', pressao:'#a78bfa', livre:'#f0a500',
+      substituicao:'#94a3b8', cartao:'#ff6b6b'
+    };
+    events.forEach(ev => {
+      const px = (parseFloat(ev.x)/100)*CW;
+      const py = (parseFloat(ev.y)/100)*CH;
+      ctx.fillStyle = dotCol[ev.type] || '#fff';
+      ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.95)'; ctx.lineWidth = 1.5;
+      ctx.stroke();
+    });
+  }
+
+  return cvs;
 }
 
 // ── MODAL ──
