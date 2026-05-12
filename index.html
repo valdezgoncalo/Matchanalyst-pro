@@ -1,0 +1,2077 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>MatchAnalyst Pro</title>
+<link rel="manifest" href="#" />
+<meta name="theme-color" content="#0a0e1a">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --bg2: #111827;
+    --bg3: #1a2235;
+    --card: #141c2e;
+    --card2: #1e2a40;
+    --border: #243050;
+    --accent: #e8c42a;
+    --accent2: #f0a500;
+    --red: #e85d4a;
+    --green: #3ecf8e;
+    --blue: #4a9eff;
+    --purple: #a78bfa;
+    --text: #e8eaf2;
+    --text2: #8b97b5;
+    --text3: #5a6a8a;
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.4);
+    --nav-h: 60px;
+    --bottom-nav-h: 64px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 14px;
+  }
+
+  /* ── AUTH ── */
+  #auth-screen {
+    position: fixed; inset: 0; z-index: 9999;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 0;
+  }
+  .auth-logo {
+    font-family: var(--font-display);
+    font-size: 42px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+  .auth-sub {
+    font-size: 11px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 40px;
+  }
+  .auth-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px 28px;
+    width: 340px;
+    max-width: 90vw;
+  }
+  .auth-card h2 { font-family: var(--font-display); font-size: 22px; letter-spacing: 1px; margin-bottom: 24px; color: var(--text); }
+  .auth-field { margin-bottom: 16px; }
+  .auth-field label { display: block; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--text2); margin-bottom: 6px; }
+  .auth-field input {
+    width: 100%; padding: 10px 14px;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); color: var(--text);
+    font-family: var(--font-body); font-size: 14px;
+    outline: none; transition: border-color .2s;
+  }
+  .auth-field input:focus { border-color: var(--accent); }
+  .btn-auth {
+    width: 100%; padding: 12px;
+    background: var(--accent); border: none;
+    border-radius: var(--radius-sm); color: #0a0e1a;
+    font-family: var(--font-display); font-size: 18px;
+    letter-spacing: 2px; cursor: pointer;
+    transition: opacity .2s; margin-top: 8px;
+  }
+  .btn-auth:hover { opacity: .85; }
+  .auth-toggle { text-align: center; margin-top: 16px; font-size: 13px; color: var(--text2); }
+  .auth-toggle span { color: var(--accent); cursor: pointer; }
+  .auth-error { background: rgba(232,93,74,.15); border: 1px solid var(--red); border-radius: var(--radius-sm); padding: 10px 14px; color: var(--red); font-size: 13px; margin-bottom: 12px; display: none; }
+
+  /* ── APP SHELL ── */
+  #app { height: 100vh; display: flex; flex-direction: column; display: none; }
+
+  /* TOP NAV */
+  .top-nav {
+    height: var(--nav-h); background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center;
+    padding: 0 16px; gap: 12px; flex-shrink: 0;
+    position: relative; z-index: 100;
+  }
+  .top-nav-logo { font-family: var(--font-display); font-size: 22px; letter-spacing: 2px; color: var(--accent); }
+  .top-nav-badge {
+    font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+    background: rgba(232,196,42,.15); color: var(--accent);
+    border: 1px solid rgba(232,196,42,.3); border-radius: 4px;
+    padding: 2px 6px;
+  }
+  .top-nav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .user-pill {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 20px; padding: 4px 12px 4px 4px;
+    cursor: pointer;
+  }
+  .user-avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--accent); display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-display); font-size: 14px; color: #0a0e1a;
+  }
+  .user-email { font-size: 12px; color: var(--text2); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .btn-logout { background: none; border: 1px solid var(--border); color: var(--text2); padding: 5px 10px; border-radius: var(--radius-sm); cursor: pointer; font-size: 12px; }
+  .btn-logout:hover { border-color: var(--red); color: var(--red); }
+
+  /* PAGES */
+  .pages { flex: 1; overflow: hidden; position: relative; }
+  .page { position: absolute; inset: 0; overflow-y: auto; padding: 20px 16px; display: none; }
+  .page.active { display: block; }
+
+  /* BOTTOM NAV */
+  .bottom-nav {
+    height: var(--bottom-nav-h); background: var(--bg2);
+    border-top: 1px solid var(--border);
+    display: flex; align-items: center;
+    flex-shrink: 0;
+  }
+  .nav-item {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 3px;
+    cursor: pointer; padding: 8px 4px;
+    color: var(--text3); transition: color .2s;
+    border: none; background: none;
+  }
+  .nav-item.active { color: var(--accent); }
+  .nav-item svg { width: 22px; height: 22px; }
+  .nav-label { font-size: 9px; letter-spacing: .5px; text-transform: uppercase; font-weight: 600; }
+
+  /* ── COMMON COMPONENTS ── */
+  .page-header { margin-bottom: 20px; }
+  .page-title { font-family: var(--font-display); font-size: 28px; letter-spacing: 2px; color: var(--text); }
+  .page-subtitle { font-size: 12px; color: var(--text3); letter-spacing: 1px; text-transform: uppercase; margin-top: 2px; }
+
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px; margin-bottom: 14px;
+  }
+  .card-title {
+    font-family: var(--font-display); font-size: 15px; letter-spacing: 1px;
+    color: var(--text2); margin-bottom: 14px; text-transform: uppercase;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card-title .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent); flex-shrink: 0;
+  }
+
+  .btn {
+    padding: 9px 18px; border-radius: var(--radius-sm);
+    font-family: var(--font-body); font-size: 13px; font-weight: 600;
+    cursor: pointer; border: none; transition: all .2s; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-primary { background: var(--accent); color: #0a0e1a; }
+  .btn-primary:hover { background: var(--accent2); }
+  .btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border); }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger { background: transparent; color: var(--red); border: 1px solid rgba(232,93,74,.3); }
+  .btn-danger:hover { background: rgba(232,93,74,.1); }
+  .btn-green { background: var(--green); color: #0a0e1a; }
+
+  .input-group { margin-bottom: 14px; }
+  .input-group label { display: block; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--text2); margin-bottom: 5px; }
+  .input-group input, .input-group select, .input-group textarea {
+    width: 100%; padding: 9px 12px;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); color: var(--text);
+    font-family: var(--font-body); font-size: 14px;
+    outline: none; transition: border-color .2s; resize: vertical;
+  }
+  .input-group input:focus, .input-group select:focus, .input-group textarea:focus { border-color: var(--accent); }
+  .input-group select option { background: var(--bg2); }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+  .stat-box {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 12px;
+    text-align: center;
+  }
+  .stat-box-val { font-family: var(--font-display); font-size: 28px; color: var(--accent); }
+  .stat-box-lbl { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--text3); margin-top: 2px; }
+
+  /* BADGES */
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 20px;
+    font-size: 10px; letter-spacing: .5px; text-transform: uppercase; font-weight: 700;
+  }
+  .badge-yellow { background: rgba(232,196,42,.15); color: var(--accent); border: 1px solid rgba(232,196,42,.3); }
+  .badge-green { background: rgba(62,207,142,.12); color: var(--green); border: 1px solid rgba(62,207,142,.3); }
+  .badge-red { background: rgba(232,93,74,.12); color: var(--red); border: 1px solid rgba(232,93,74,.3); }
+  .badge-blue { background: rgba(74,158,255,.12); color: var(--blue); border: 1px solid rgba(74,158,255,.3); }
+  .badge-purple { background: rgba(167,139,250,.12); color: var(--purple); border: 1px solid rgba(167,139,250,.3); }
+
+  /* TOAST */
+  #toast-container {
+    position: fixed; bottom: 76px; left: 50%; transform: translateX(-50%);
+    z-index: 9998; display: flex; flex-direction: column; gap: 8px;
+    align-items: center; pointer-events: none;
+  }
+  .toast {
+    background: var(--card2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 10px 16px;
+    font-size: 13px; color: var(--text);
+    box-shadow: var(--shadow); pointer-events: auto;
+    animation: slideUp .3s ease;
+  }
+  .toast.success { border-color: var(--green); color: var(--green); }
+  .toast.error { border-color: var(--red); color: var(--red); }
+  @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 500;
+    background: rgba(0,0,0,.7); display: none;
+    align-items: flex-end; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius) var(--radius) 0 0;
+    width: 100%; max-width: 600px;
+    max-height: 90vh; overflow-y: auto;
+    padding: 20px 16px; padding-bottom: 32px;
+    animation: slideModal .3s ease;
+  }
+  @keyframes slideModal { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .modal-title { font-family: var(--font-display); font-size: 22px; letter-spacing: 1px; }
+  .modal-close { background: none; border: none; color: var(--text2); font-size: 22px; cursor: pointer; padding: 4px 8px; }
+  .modal-close:hover { color: var(--red); }
+
+  /* ── DASHBOARD ── */
+  .dash-hero {
+    background: linear-gradient(135deg, var(--card) 0%, var(--bg3) 100%);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 20px; margin-bottom: 16px;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .dash-hero-text h1 { font-family: var(--font-display); font-size: 26px; letter-spacing: 2px; color: var(--accent); }
+  .dash-hero-text p { font-size: 12px; color: var(--text2); margin-top: 4px; }
+  .dash-hero-btn { flex-shrink: 0; }
+
+  .recent-list { display: flex; flex-direction: column; gap: 10px; }
+  .recent-item {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 12px 14px;
+    display: flex; align-items: center; gap: 12px; cursor: pointer;
+    transition: border-color .2s;
+  }
+  .recent-item:hover { border-color: var(--accent); }
+  .recent-vs { font-family: var(--font-display); font-size: 16px; letter-spacing: 1px; flex: 1; }
+  .recent-meta { font-size: 11px; color: var(--text3); }
+  .recent-score { font-family: var(--font-display); font-size: 20px; color: var(--accent); }
+
+  /* ── ANÁLISE FORM ── */
+  .section-sep {
+    border: none; border-top: 1px solid var(--border);
+    margin: 16px 0;
+  }
+  .rating-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .rating-btn {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 2px solid var(--border); background: transparent;
+    color: var(--text2); font-family: var(--font-display); font-size: 16px;
+    cursor: pointer; transition: all .2s;
+  }
+  .rating-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .rating-btn.selected { background: var(--accent); border-color: var(--accent); color: #0a0e1a; }
+
+  .phase-tabs { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+  .phase-tab {
+    padding: 6px 14px; border-radius: 20px;
+    border: 1px solid var(--border); background: transparent;
+    color: var(--text2); font-size: 12px; cursor: pointer;
+    transition: all .2s;
+  }
+  .phase-tab.active { background: var(--accent); border-color: var(--accent); color: #0a0e1a; font-weight: 700; }
+
+  /* ── PITCH MAP ── */
+  #pitch-container {
+    position: relative; width: 100%; max-width: 380px;
+    margin: 0 auto; cursor: crosshair;
+  }
+  #pitch-svg { width: 100%; display: block; }
+  .event-marker {
+    position: absolute; width: 24px; height: 24px;
+    border-radius: 50%; transform: translate(-50%, -50%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; cursor: pointer; border: 2px solid rgba(255,255,255,.3);
+    transition: transform .2s;
+  }
+  .event-marker:hover { transform: translate(-50%, -50%) scale(1.3); }
+
+  .event-type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .event-type-btn {
+    padding: 8px 10px; border-radius: var(--radius-sm);
+    border: 1px solid var(--border); background: transparent;
+    color: var(--text2); font-size: 12px; cursor: pointer;
+    display: flex; align-items: center; gap: 6px; transition: all .2s;
+  }
+  .event-type-btn.active, .event-type-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .event-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── STATS CHART ── */
+  .chart-wrap { position: relative; width: 100%; }
+
+  /* ── PIPELINE / KANBAN ── */
+  .kanban-cols { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 12px; }
+  .kanban-col {
+    min-width: 220px; flex-shrink: 0;
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 12px;
+  }
+  .kanban-col-title {
+    font-family: var(--font-display); font-size: 14px; letter-spacing: 1px;
+    color: var(--text2); margin-bottom: 12px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .kanban-count {
+    background: var(--border); border-radius: 10px;
+    padding: 1px 7px; font-size: 11px; color: var(--text3);
+  }
+  .kanban-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 10px 12px;
+    margin-bottom: 8px; cursor: pointer; transition: border-color .2s;
+  }
+  .kanban-card:hover { border-color: var(--accent); }
+  .kanban-card-title { font-weight: 600; font-size: 13px; }
+  .kanban-card-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
+  .kanban-card-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+
+  /* ── CALENDAR ── */
+  .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .cal-month { font-family: var(--font-display); font-size: 22px; letter-spacing: 2px; }
+  .cal-nav-btn { background: var(--bg3); border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: var(--radius-sm); cursor: pointer; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal-day-label { text-align: center; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--text3); padding: 4px 0; }
+  .cal-day {
+    aspect-ratio: 1; border-radius: var(--radius-sm);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-size: 13px; cursor: pointer; border: 1px solid transparent;
+    position: relative; transition: all .2s;
+  }
+  .cal-day:hover { border-color: var(--border); background: var(--bg3); }
+  .cal-day.today { border-color: var(--accent); color: var(--accent); font-weight: 700; }
+  .cal-day.has-event::after {
+    content: ''; position: absolute; bottom: 3px;
+    width: 5px; height: 5px; border-radius: 50%; background: var(--accent);
+  }
+  .cal-day.empty { opacity: 0; pointer-events: none; }
+  .cal-events { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+  .cal-event-item {
+    background: var(--bg3); border-left: 3px solid var(--accent);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    padding: 10px 12px;
+  }
+  .cal-event-title { font-weight: 600; font-size: 13px; }
+  .cal-event-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+  /* ── ANALYSIS LIST ── */
+  .analysis-item {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px;
+    margin-bottom: 10px; cursor: pointer; transition: border-color .2s;
+  }
+  .analysis-item:hover { border-color: var(--accent); }
+  .analysis-item-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .analysis-item-vs { font-family: var(--font-display); font-size: 20px; letter-spacing: 1px; }
+  .analysis-item-body { display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap; align-items: center; }
+  .analysis-item-stat { font-size: 11px; color: var(--text3); }
+
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--text3); }
+  .empty-state svg { width: 48px; height: 48px; opacity: .3; margin-bottom: 12px; }
+  .empty-state p { font-size: 13px; }
+
+  /* ── REPORT DETAIL ── */
+  .report-section { margin-bottom: 16px; }
+  .report-section-title {
+    font-family: var(--font-display); font-size: 13px; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--text3); margin-bottom: 10px;
+    border-bottom: 1px solid var(--border); padding-bottom: 6px;
+  }
+  .report-kv { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(36,48,80,.5); }
+  .report-kv:last-child { border-bottom: none; }
+  .report-k { font-size: 12px; color: var(--text3); }
+  .report-v { font-size: 13px; font-weight: 600; text-align: right; max-width: 60%; }
+
+  /* RADAR */
+  .radar-wrap { max-width: 280px; margin: 0 auto; }
+
+  /* TABS */
+  .tab-bar { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 16px; overflow-x: auto; }
+  .tab-btn { padding: 8px 16px; border: none; background: transparent; color: var(--text2); font-family: var(--font-body); font-size: 13px; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; transition: all .2s; }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* TAG INPUT */
+  .tag-input-wrap { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag-pill { display: inline-flex; align-items: center; gap: 4px; background: var(--bg3); border: 1px solid var(--border); border-radius: 20px; padding: 3px 10px 3px 10px; font-size: 12px; color: var(--text2); }
+  .tag-pill .remove { cursor: pointer; color: var(--text3); font-size: 14px; }
+  .tag-pill .remove:hover { color: var(--red); }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* SUPABASE CONFIG */
+  .config-banner {
+    background: rgba(232,196,42,.08); border: 1px solid rgba(232,196,42,.3);
+    border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 16px;
+    font-size: 12px; color: var(--accent); display: none;
+  }
+
+  @media (min-width: 768px) {
+    .page { padding: 28px 32px; }
+    .grid-2 { grid-template-columns: 1fr 1fr; }
+    .modal { border-radius: var(--radius); margin: auto; }
+    .modal-overlay { align-items: center; }
+    .event-type-grid { grid-template-columns: repeat(4, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="auth-logo">MatchAnalyst</div>
+  <div class="auth-sub">Pro · Análise de Adversário</div>
+  <div class="auth-card">
+    <h2 id="auth-title">Entrar</h2>
+    <div class="auth-error" id="auth-error"></div>
+    <div class="auth-field">
+      <label>Email</label>
+      <input type="email" id="auth-email" placeholder="analista@clube.pt">
+    </div>
+    <div class="auth-field">
+      <label>Password</label>
+      <input type="password" id="auth-pass" placeholder="••••••••">
+    </div>
+    <div class="auth-field" id="auth-name-wrap" style="display:none">
+      <label>Nome</label>
+      <input type="text" id="auth-name" placeholder="João Silva">
+    </div>
+    <button class="btn-auth" id="auth-btn">ENTRAR</button>
+    <div class="auth-toggle" id="auth-toggle-text">
+      Não tens conta? <span id="auth-toggle-link">Registar</span>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <nav class="top-nav">
+    <span class="top-nav-logo">MatchAnalyst</span>
+    <span class="top-nav-badge">PRO</span>
+    <div class="top-nav-right">
+      <div class="user-pill" id="user-pill">
+        <div class="user-avatar" id="user-avatar">A</div>
+        <span class="user-email" id="user-email-display">analista</span>
+      </div>
+      <button class="btn-logout" onclick="logout()">Sair</button>
+    </div>
+  </nav>
+
+  <div class="pages">
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="config-banner" id="config-banner">
+        ⚙️ Configura as tuas credenciais Supabase no código (SUPABASE_URL e SUPABASE_KEY) para activar o cloud sync.
+      </div>
+      <div class="dash-hero">
+        <div class="dash-hero-text">
+          <h1>BOA ANÁLISE</h1>
+          <p id="dash-greeting">Carregando dados...</p>
+        </div>
+        <div class="dash-hero-btn">
+          <button class="btn btn-primary" onclick="showPage('analise'); openNewAnalysis()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nova Análise
+          </button>
+        </div>
+      </div>
+
+      <div class="grid-3" id="dash-stats" style="margin-bottom:16px">
+        <div class="stat-box"><div class="stat-box-val" id="ds-total">0</div><div class="stat-box-lbl">Análises</div></div>
+        <div class="stat-box"><div class="stat-box-val" id="ds-teams">0</div><div class="stat-box-lbl">Equipas</div></div>
+        <div class="stat-box"><div class="stat-box-val" id="ds-month">0</div><div class="stat-box-lbl">Este mês</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>Análises Recentes</div>
+        <div id="recent-list" class="recent-list">
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            <p>Sem análises ainda.<br>Cria a tua primeira!</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>Próximos Jogos</div>
+        <div id="dash-upcoming"></div>
+      </div>
+    </div>
+
+    <!-- NOVA ANÁLISE -->
+    <div class="page" id="page-analise">
+      <div class="page-header">
+        <div class="page-title">ANÁLISE DE JOGO</div>
+        <div class="page-subtitle">Registo detalhado · Adversário / Própria equipa</div>
+      </div>
+
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchAnalysisTab('info')">Informação</button>
+        <button class="tab-btn" onclick="switchAnalysisTab('tatico')">Tático</button>
+        <button class="tab-btn" onclick="switchAnalysisTab('fases')">Fases de Jogo</button>
+        <button class="tab-btn" onclick="switchAnalysisTab('mapa')">Mapa de Eventos</button>
+        <button class="tab-btn" onclick="switchAnalysisTab('notas')">Notas & Avaliação</button>
+      </div>
+
+      <!-- TAB: INFO -->
+      <div id="atab-info" class="analysis-tab-content">
+        <div class="card">
+          <div class="card-title"><span class="dot"></span>Identificação do Jogo</div>
+          <div class="grid-2">
+            <div class="input-group">
+              <label>Tipo de Análise</label>
+              <select id="f-tipo">
+                <option value="adversario">Adversário</option>
+                <option value="propria">Própria Equipa</option>
+                <option value="misto">Análise Mista</option>
+              </select>
+            </div>
+            <div class="input-group">
+              <label>Competição</label>
+              <input type="text" id="f-competicao" placeholder="Liga Pro, Taça...">
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="input-group">
+              <label>Equipa Casa</label>
+              <input type="text" id="f-casa" placeholder="Nome da equipa">
+            </div>
+            <div class="input-group">
+              <label>Equipa Fora</label>
+              <input type="text" id="f-fora" placeholder="Nome da equipa">
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="input-group">
+              <label>Resultado</label>
+              <input type="text" id="f-resultado" placeholder="2-1">
+            </div>
+            <div class="input-group">
+              <label>Data do Jogo</label>
+              <input type="date" id="f-data">
+            </div>
+          </div>
+          <div class="input-group">
+            <label>Analista</label>
+            <input type="text" id="f-analista" placeholder="Nome do analista">
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="dot"></span>Sistema Tático</div>
+          <div class="grid-2">
+            <div class="input-group">
+              <label>Sistema Equipa Analisada</label>
+              <select id="f-sistema">
+                <option>4-3-3</option><option>4-4-2</option><option>4-2-3-1</option>
+                <option>3-5-2</option><option>3-4-3</option><option>5-3-2</option>
+                <option>4-1-4-1</option><option>4-5-1</option><option>Outro</option>
+              </select>
+            </div>
+            <div class="input-group">
+              <label>Sistema Adversário</label>
+              <select id="f-sistema-adv">
+                <option>4-3-3</option><option>4-4-2</option><option>4-2-3-1</option>
+                <option>3-5-2</option><option>3-4-3</option><option>5-3-2</option>
+                <option>4-1-4-1</option><option>4-5-1</option><option>Outro</option>
+              </select>
+            </div>
+          </div>
+          <div class="input-group">
+            <label>Perfil de Jogo (tags)</label>
+            <div style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap" id="perfil-tags-wrap"></div>
+            <div style="display:flex;gap:6px">
+              <input type="text" id="perfil-tag-input" placeholder="Ex: Pressão alta, Contra-ataque..." style="flex:1">
+              <button class="btn btn-ghost" onclick="addTag('perfil')" style="flex-shrink:0">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: TÁTICO -->
+      <div id="atab-tatico" class="analysis-tab-content" style="display:none">
+        <div class="card">
+          <div class="card-title"><span class="dot"></span>Métricas de Posse & Pressão</div>
+          <div class="grid-2">
+            <div class="input-group">
+              <label>Posse de Bola (%)</label>
+              <input type="number" id="f-posse" min="0" max="100" placeholder="52">
+            </div>
+            <div class="input-group">
+              <label>PPDA (Pressão)</label>
+              <input type="number" id="f-ppda" step="0.1" placeholder="8.5">
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="input-group">
+              <label>Linha Defensiva (m)</label>
+              <input type="number" id="f-linha-def" placeholder="35">
+            </div>
+            <div class="input-group">
+              <label>Linha Ofensiva (m)</label>
+              <input type="number" id="f-linha-of" placeholder="55">
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="input-group">
+              <label>Amplitude Defensiva</label>
+              <select id="f-amplitude-def">
+                <option value="">-</option><option>Muito Compacta</option><option>Compacta</option><option>Média</option><option>Aberta</option>
+              </select>
+            </div>
+            <div class="input-group">
+              <label>Amplitude Ofensiva</label>
+              <select id="f-amplitude-of">
+                <option value="">-</option><option>Estreita</option><option>Média</option><option>Larga</option><option>Muito Larga</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="dot"></span>Estatísticas de Jogo</div>
+          <div class="grid-2">
+            <div class="input-group"><label>Remates Totais</label><input type="number" id="f-remates" placeholder="12"></div>
+            <div class="input-group"><label>Remates à Baliza</label><input type="number" id="f-remates-b" placeholder="6"></div>
+          </div>
+          <div class="grid-2">
+            <div class="input-group"><label>xG</label><input type="number" id="f-xg" step="0.01" placeholder="1.82"></div>
+            <div class="input-group"><label>xGA</label><input type="number" id="f-xga" step="0.01" placeholder="0.95"></div>
+          </div>
+          <div class="grid-2">
+            <div class="input-group"><label>Cantos</label><input type="number" id="f-cantos" placeholder="5"></div>
+            <div class="input-group"><label>Faltas</label><input type="number" id="f-faltas" placeholder="14"></div>
+          </div>
+          <div class="grid-2">
+            <div class="input-group"><label>Passes Totais</label><input type="number" id="f-passes" placeholder="450"></div>
+            <div class="input-group"><label>Precisão Passes (%)</label><input type="number" id="f-passes-p" min="0" max="100" placeholder="84"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: FASES DE JOGO -->
+      <div id="atab-fases" class="analysis-tab-content" style="display:none">
+        <div class="phase-tabs">
+          <button class="phase-tab active" onclick="switchPhase('ataque', this)">Organização Ofensiva</button>
+          <button class="phase-tab" onclick="switchPhase('defesa', this)">Organização Defensiva</button>
+          <button class="phase-tab" onclick="switchPhase('trans-pos', this)">Trans. Positiva</button>
+          <button class="phase-tab" onclick="switchPhase('trans-neg', this)">Trans. Negativa</button>
+          <button class="phase-tab" onclick="switchPhase('bola-parada', this)">Bola Parada</button>
+        </div>
+
+        <div id="phase-ataque">
+          <div class="card">
+            <div class="card-title"><span class="dot"></span>Organização Ofensiva</div>
+            <div class="input-group">
+              <label>Estrutura de Ataque</label>
+              <select id="f-est-ataque"><option value="">-</option><option>Construção Curta</option><option>Jogo Direto</option><option>Transição Rápida</option><option>Combinado</option></select>
+            </div>
+            <div class="input-group">
+              <label>Padrões de Ataque Identificados</label>
+              <textarea id="f-padroes-ataque" rows="3" placeholder="Descreve os padrões: combinações, movimentos, zonas de criação..."></textarea>
+            </div>
+            <div class="input-group">
+              <label>Zona Preferencial de Ataque</label>
+              <select id="f-zona-ataque"><option value="">-</option><option>Esquerda</option><option>Centro</option><option>Direita</option><option>Distribuído</option></select>
+            </div>
+            <div class="input-group">
+              <label>Eficácia Ofensiva</label>
+              <div class="rating-row" id="rating-ofensiva"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="phase-defesa" style="display:none">
+          <div class="card">
+            <div class="card-title"><span class="dot"></span>Organização Defensiva</div>
+            <div class="input-group">
+              <label>Bloco Defensivo</label>
+              <select id="f-bloco"><option value="">-</option><option>Alto</option><option>Médio-Alto</option><option>Médio</option><option>Baixo</option></select>
+            </div>
+            <div class="input-group">
+              <label>Tipo de Pressão</label>
+              <select id="f-pressao"><option value="">-</option><option>Pressão Alta</option><option>Pressão Média</option><option>Defesa Baixa</option><option>Variável</option></select>
+            </div>
+            <div class="input-group">
+              <label>Notas Defensivas</label>
+              <textarea id="f-notas-defesa" rows="3" placeholder="Vulnerabilidades, forças defensivas, comportamentos..."></textarea>
+            </div>
+            <div class="input-group">
+              <label>Solidez Defensiva</label>
+              <div class="rating-row" id="rating-defensiva"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="phase-trans-pos" style="display:none">
+          <div class="card">
+            <div class="card-title"><span class="dot"></span>Transição Positiva (Recuperação → Ataque)</div>
+            <div class="input-group">
+              <label>Velocidade de Transição</label>
+              <select id="f-vel-trans-pos"><option value="">-</option><option>Muito Rápida</option><option>Rápida</option><option>Controlada</option><option>Lenta</option></select>
+            </div>
+            <div class="input-group">
+              <label>Padrões de Transição Positiva</label>
+              <textarea id="f-trans-pos-notas" rows="3" placeholder="Como exploram a recuperação de bola..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div id="phase-trans-neg" style="display:none">
+          <div class="card">
+            <div class="card-title"><span class="dot"></span>Transição Negativa (Perda → Defesa)</div>
+            <div class="input-group">
+              <label>Reação à Perda de Bola</label>
+              <select id="f-reacao-perda"><option value="">-</option><option>Pressão Imediata</option><option>Reorganização Rápida</option><option>Recuo Direto</option><option>Desordenada</option></select>
+            </div>
+            <div class="input-group">
+              <label>Vulnerabilidades na Transição</label>
+              <textarea id="f-trans-neg-notas" rows="3" placeholder="Espaços deixados, demora na reação..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div id="phase-bola-parada" style="display:none">
+          <div class="card">
+            <div class="card-title"><span class="dot"></span>Bola Parada</div>
+            <div class="grid-2">
+              <div class="input-group">
+                <label>Cantos Ofensivos</label>
+                <select id="f-cantos-of"><option value="">-</option><option>Curtos</option><option>Zona</option><option>Individual</option><option>Variável</option></select>
+              </div>
+              <div class="input-group">
+                <label>Cantos Defensivos</label>
+                <select id="f-cantos-def"><option value="">-</option><option>Zona</option><option>Individual</option><option>Misto</option></select>
+              </div>
+            </div>
+            <div class="input-group">
+              <label>Livres Perigosos</label>
+              <textarea id="f-livres" rows="2" placeholder="Executores, zona de execução, padrões..."></textarea>
+            </div>
+            <div class="input-group">
+              <label>Notas Gerais Bola Parada</label>
+              <textarea id="f-bp-notas" rows="2" placeholder="Penáltis, lançamentos de linha, outros..."></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: MAPA DE EVENTOS -->
+      <div id="atab-mapa" class="analysis-tab-content" style="display:none">
+        <div class="card">
+          <div class="card-title"><span class="dot"></span>Tipo de Evento</div>
+          <div class="event-type-grid">
+            <button class="event-type-btn active" onclick="selectEventType('golo', this)"><span class="event-dot" style="background:#e8c42a"></span>Golo</button>
+            <button class="event-type-btn" onclick="selectEventType('remate', this)"><span class="event-dot" style="background:#4a9eff"></span>Remate</button>
+            <button class="event-type-btn" onclick="selectEventType('perigo', this)"><span class="event-dot" style="background:#e85d4a"></span>Zona Perigosa</button>
+            <button class="event-type-btn" onclick="selectEventType('recuperacao', this)"><span class="event-dot" style="background:#3ecf8e"></span>Recuperação</button>
+            <button class="event-type-btn" onclick="selectEventType('pressao', this)"><span class="event-dot" style="background:#a78bfa"></span>Pressão</button>
+            <button class="event-type-btn" onclick="selectEventType('livre', this)"><span class="event-dot" style="background:#f0a500"></span>Livre/Canto</button>
+            <button class="event-type-btn" onclick="selectEventType('substituicao', this)"><span class="event-dot" style="background:#64748b"></span>Substituição</button>
+            <button class="event-type-btn" onclick="selectEventType('cartao', this)"><span class="event-dot" style="background:#ff6b6b"></span>Cartão</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="dot"></span>Campo — Clica para marcar evento</div>
+          <div id="pitch-container">
+            <svg id="pitch-svg" viewBox="0 0 380 260" xmlns="http://www.w3.org/2000/svg">
+              <!-- Relva -->
+              <rect width="380" height="260" fill="#1a3a1a" rx="4"/>
+              <!-- Linhas principais -->
+              <rect x="10" y="10" width="360" height="240" fill="none" stroke="#2d5a2d" stroke-width="2"/>
+              <!-- Meio campo -->
+              <line x1="190" y1="10" x2="190" y2="250" stroke="#2d5a2d" stroke-width="1.5"/>
+              <circle cx="190" cy="130" r="30" fill="none" stroke="#2d5a2d" stroke-width="1.5"/>
+              <circle cx="190" cy="130" r="3" fill="#2d5a2d"/>
+              <!-- Área grande esquerda -->
+              <rect x="10" y="65" width="62" height="130" fill="none" stroke="#2d5a2d" stroke-width="1.5"/>
+              <!-- Área pequena esquerda -->
+              <rect x="10" y="95" width="28" height="70" fill="none" stroke="#2d5a2d" stroke-width="1.5"/>
+              <!-- Baliza esquerda -->
+              <rect x="4" y="112" width="6" height="36" fill="none" stroke="#4a7a4a" stroke-width="2"/>
+              <!-- Ponto penálti esquerdo -->
+              <circle cx="50" cy="130" r="2" fill="#2d5a2d"/>
+              <!-- Área grande direita -->
+              <rect x="308" y="65" width="62" height="130" fill="none" stroke="#2d5a2d" stroke-width="1.5"/>
+              <!-- Área pequena direita -->
+              <rect x="342" y="95" width="28" height="70" fill="none" stroke="#2d5a2d" stroke-width="1.5"/>
+              <!-- Baliza direita -->
+              <rect x="370" y="112" width="6" height="36" fill="none" stroke="#4a7a4a" stroke-width="2"/>
+              <!-- Ponto penálti direito -->
+              <circle cx="330" cy="130" r="2" fill="#2d5a2d"/>
+              <!-- Cantos -->
+              <path d="M10,18 A8,8 0 0,1 18,10" fill="none" stroke="#2d5a2d" stroke-width="1"/>
+              <path d="M362,10 A8,8 0 0,1 370,18" fill="none" stroke="#2d5a2d" stroke-width="1"/>
+              <path d="M10,242 A8,8 0 0,0 18,250" fill="none" stroke="#2d5a2d" stroke-width="1"/>
+              <path d="M362,250 A8,8 0 0,0 370,242" fill="none" stroke="#2d5a2d" stroke-width="1"/>
+              <!-- Etiquetas -->
+              <text x="55" y="24" fill="#3a6a3a" font-size="9" font-family="sans-serif">DEFESA</text>
+              <text x="285" y="24" fill="#3a6a3a" font-size="9" font-family="sans-serif">ATAQUE</text>
+            </svg>
+            <div id="event-markers-container" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:12px;align-items:center">
+            <span style="font-size:11px;color:var(--text3)" id="event-count-label">0 eventos marcados</span>
+            <button class="btn btn-danger" onclick="clearPitchEvents()" style="font-size:12px;padding:6px 12px">Limpar Eventos</button>
+          </div>
+        </div>
+
+        <div class="card" id="events-list-card" style="display:none">
+          <div class="card-title"><span class="dot"></span>Lista de Eventos</div>
+          <div id="events-list"></div>
+        </div>
+      </div>
+
+      <!-- TAB: NOTAS & AVALIAÇÃO -->
+      <div id="atab-notas" class="analysis-tab-content" style="display:none">
+        <div class="card">
+          <div class="card-title"><span class="dot"></span>Avaliação Global</div>
+          <div class="input-group">
+            <label>Performance Geral (1-10)</label>
+            <div class="rating-row" id="rating-geral"></div>
+          </div>
+          <div class="input-group">
+            <label>Performance Tática (1-10)</label>
+            <div class="rating-row" id="rating-tatica"></div>
+          </div>
+          <div class="input-group">
+            <label>Intensidade / Ritmo (1-10)</label>
+            <div class="rating-row" id="rating-intensidade"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="dot"></span>Análise Qualitativa</div>
+          <div class="input-group">
+            <label>Pontos Fortes Identificados</label>
+            <textarea id="f-pontos-fortes" rows="3" placeholder="O que a equipa faz bem..."></textarea>
+          </div>
+          <div class="input-group">
+            <label>Pontos Fracos / Vulnerabilidades</label>
+            <textarea id="f-pontos-fracos" rows="3" placeholder="Onde podemos explorar..."></textarea>
+          </div>
+          <div class="input-group">
+            <label>Recomendações Táticas</label>
+            <textarea id="f-recomendacoes" rows="3" placeholder="Como abordar o próximo jogo..."></textarea>
+          </div>
+          <div class="input-group">
+            <label>Notas Gerais</label>
+            <textarea id="f-notas" rows="3" placeholder="Observações adicionais..."></textarea>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="dot"></span>Próximo Confronto</div>
+          <div class="grid-2">
+            <div class="input-group">
+              <label>Data Próximo Jogo</label>
+              <input type="date" id="f-proximo-data">
+            </div>
+            <div class="input-group">
+              <label>Local</label>
+              <select id="f-proximo-local"><option value="">-</option><option>Casa</option><option>Fora</option><option>Neutro</option></select>
+            </div>
+          </div>
+          <div class="input-group">
+            <label>Plano para o Próximo Jogo</label>
+            <textarea id="f-proximo-plano" rows="2" placeholder="Estratégia sugerida..."></textarea>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px">
+          <button class="btn btn-primary" onclick="saveAnalysis()" style="flex:1;justify-content:center">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Guardar Análise
+          </button>
+          <button class="btn btn-ghost" onclick="exportPDF()" style="flex-shrink:0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            PDF
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ANÁLISES (LISTA) -->
+    <div class="page" id="page-lista">
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div class="page-title">ANÁLISES</div>
+          <div class="page-subtitle">Histórico completo</div>
+        </div>
+        <button class="btn btn-primary" onclick="showPage('analise'); openNewAnalysis()">+ Nova</button>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+        <input type="text" id="search-input" placeholder="Pesquisar equipa..." style="flex:1;min-width:140px;padding:8px 12px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:var(--font-body);outline:none" oninput="filterAnalyses()">
+        <select id="filter-tipo" style="padding:8px 12px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:var(--font-body);outline:none" onchange="filterAnalyses()">
+          <option value="">Todos os tipos</option>
+          <option value="adversario">Adversário</option>
+          <option value="propria">Própria Equipa</option>
+          <option value="misto">Misto</option>
+        </select>
+      </div>
+
+      <div id="analyses-list"></div>
+    </div>
+
+    <!-- PIPELINE -->
+    <div class="page" id="page-pipeline">
+      <div class="page-header">
+        <div class="page-title">PIPELINE</div>
+        <div class="page-subtitle">Gestão de análises por estado</div>
+      </div>
+      <div class="kanban-cols" id="kanban-board"></div>
+    </div>
+
+    <!-- CALENDÁRIO -->
+    <div class="page" id="page-calendario">
+      <div class="page-header">
+        <div class="page-title">CALENDÁRIO</div>
+        <div class="page-subtitle">Jogos e análises agendadas</div>
+      </div>
+      <div class="card">
+        <div class="cal-header">
+          <button class="cal-nav-btn" onclick="changeMonth(-1)">&#8249;</button>
+          <div class="cal-month" id="cal-month-label"></div>
+          <button class="cal-nav-btn" onclick="changeMonth(1)">&#8250;</button>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+      </div>
+      <div class="cal-events" id="cal-events-list"></div>
+    </div>
+
+    <!-- STATS -->
+    <div class="page" id="page-stats">
+      <div class="page-header">
+        <div class="page-title">ESTATÍSTICAS</div>
+        <div class="page-subtitle">Dashboard analítico</div>
+      </div>
+      <div class="grid-3" id="stats-summary" style="margin-bottom:16px"></div>
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>Posse de Bola por Jogo</div>
+        <div class="chart-wrap"><canvas id="chart-posse" height="200"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>xG por Análise</div>
+        <div class="chart-wrap"><canvas id="chart-xg" height="200"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>Avaliações Médias</div>
+        <div class="radar-wrap"><canvas id="chart-radar" height="260"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      <span class="nav-label">Início</span>
+    </button>
+    <button class="nav-item" onclick="showPage('lista')" id="nav-lista">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6m-6 4h6M9 8h6M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z"/></svg>
+      <span class="nav-label">Análises</span>
+    </button>
+    <button class="nav-item" onclick="showPage('analise'); openNewAnalysis()" id="nav-new" style="position:relative">
+      <div style="position:absolute;top:4px;width:44px;height:44px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(232,196,42,.4)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#0a0e1a" stroke-width="2.5" style="width:22px;height:22px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </div>
+      <span class="nav-label" style="margin-top:28px">Nova</span>
+    </button>
+    <button class="nav-item" onclick="showPage('pipeline')" id="nav-pipeline">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="17" y="3" width="5" height="8" rx="1"/></svg>
+      <span class="nav-label">Pipeline</span>
+    </button>
+    <button class="nav-item" onclick="showPage('stats')" id="nav-stats">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <span class="nav-label">Stats</span>
+    </button>
+  </nav>
+</div>
+
+<!-- TOAST -->
+<div id="toast-container"></div>
+
+<!-- MODAL: Analysis Detail -->
+<div class="modal-overlay" id="detail-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="detail-title">Análise</div>
+      <button class="modal-close" onclick="closeModal('detail-modal')">×</button>
+    </div>
+    <div id="detail-content"></div>
+    <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="loadAnalysisForEdit()" style="flex:1;justify-content:center">Editar</button>
+      <button class="btn btn-ghost" onclick="exportDetailPDF()">Exportar PDF</button>
+      <button class="btn btn-danger" onclick="deleteCurrentAnalysis()">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: New Pipeline Item -->
+<div class="modal-overlay" id="pipeline-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Novo Item Pipeline</div>
+      <button class="modal-close" onclick="closeModal('pipeline-modal')">×</button>
+    </div>
+    <div class="input-group">
+      <label>Adversário</label>
+      <input type="text" id="pk-adversario" placeholder="Ex: Sporting CP">
+    </div>
+    <div class="input-group">
+      <label>Competição</label>
+      <input type="text" id="pk-competicao" placeholder="Liga Pro, UCL...">
+    </div>
+    <div class="input-group">
+      <label>Data do Jogo</label>
+      <input type="date" id="pk-data">
+    </div>
+    <div class="input-group">
+      <label>Estado</label>
+      <select id="pk-estado">
+        <option value="agendado">Agendado</option>
+        <option value="em-analise">Em Análise</option>
+        <option value="concluido">Concluído</option>
+        <option value="apresentado">Apresentado</option>
+      </select>
+    </div>
+    <div class="input-group">
+      <label>Prioridade</label>
+      <select id="pk-prioridade">
+        <option value="normal">Normal</option>
+        <option value="alta">Alta</option>
+        <option value="urgente">Urgente</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" onclick="savePipelineItem()" style="width:100%;justify-content:center;margin-top:4px">Adicionar ao Pipeline</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  SUPABASE CONFIG — substitui com as tuas credenciais
+// ═══════════════════════════════════════════════
+const SUPABASE_URL = 'https://YOUR_PROJECT.supabase.co';
+const SUPABASE_KEY = 'YOUR_ANON_KEY';
+
+let supabase = null;
+let currentUser = null;
+let analyses = [];
+let pipelineItems = [];
+let pitchEvents = [];
+let currentEventType = 'golo';
+let currentAnalysisId = null;
+let editingAnalysisId = null;
+let calendarDate = new Date();
+let charts = {};
+
+const EVENT_COLORS = {
+  golo: '#e8c42a', remate: '#4a9eff', perigo: '#e85d4a',
+  recuperacao: '#3ecf8e', pressao: '#a78bfa', livre: '#f0a500',
+  substituicao: '#64748b', cartao: '#ff6b6b'
+};
+const EVENT_ICONS = {
+  golo: '⚽', remate: '🎯', perigo: '⚠️', recuperacao: '🔄',
+  pressao: '💪', livre: '🏳️', substituicao: '🔁', cartao: '🟨'
+};
+
+const KANBAN_COLS = [
+  { id: 'agendado', label: 'Agendado', color: 'var(--blue)' },
+  { id: 'em-analise', label: 'Em Análise', color: 'var(--accent)' },
+  { id: 'concluido', label: 'Concluído', color: 'var(--green)' },
+  { id: 'apresentado', label: 'Apresentado', color: 'var(--purple)' }
+];
+
+// ── INIT ──
+async function init() {
+  try {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      currentUser = session.user;
+      showApp();
+    } else {
+      showAuth();
+    }
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN') { currentUser = session.user; showApp(); }
+      if (event === 'SIGNED_OUT') { currentUser = null; showAuth(); }
+    });
+  } catch(e) {
+    // Offline mode
+    showApp(true);
+  }
+}
+
+function showAuth() {
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+
+async function showApp(offline = false) {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  if (offline) {
+    document.getElementById('config-banner').style.display = 'block';
+  }
+  // User display
+  if (currentUser) {
+    const email = currentUser.email || '';
+    document.getElementById('user-email-display').textContent = email;
+    document.getElementById('user-avatar').textContent = email[0].toUpperCase();
+    const meta = currentUser.user_metadata;
+    const name = meta?.name || email.split('@')[0];
+    document.getElementById('dash-greeting').textContent = `Bem-vindo, ${name}`;
+  } else {
+    document.getElementById('dash-greeting').textContent = 'Modo offline';
+    document.getElementById('user-email-display').textContent = 'offline';
+  }
+  initRatings();
+  initPitch();
+  await loadData();
+  renderDashboard();
+  renderKanban();
+  renderCalendar();
+  renderStats();
+}
+
+// ── AUTH ──
+let authMode = 'login';
+document.getElementById('auth-toggle-link').addEventListener('click', () => {
+  authMode = authMode === 'login' ? 'register' : 'login';
+  document.getElementById('auth-title').textContent = authMode === 'login' ? 'Entrar' : 'Criar Conta';
+  document.getElementById('auth-btn').textContent = authMode === 'login' ? 'ENTRAR' : 'REGISTAR';
+  document.getElementById('auth-name-wrap').style.display = authMode === 'register' ? 'block' : 'none';
+  document.getElementById('auth-toggle-text').innerHTML = authMode === 'login'
+    ? 'Não tens conta? <span id="auth-toggle-link">Registar</span>'
+    : 'Já tens conta? <span id="auth-toggle-link">Entrar</span>';
+  document.getElementById('auth-toggle-link').addEventListener('click', arguments.callee);
+  document.getElementById('auth-error').style.display = 'none';
+});
+
+document.getElementById('auth-btn').addEventListener('click', async () => {
+  const email = document.getElementById('auth-email').value.trim();
+  const pass = document.getElementById('auth-pass').value;
+  const errEl = document.getElementById('auth-error');
+  errEl.style.display = 'none';
+  if (!email || !pass) { errEl.textContent = 'Preenche email e password.'; errEl.style.display = 'block'; return; }
+  try {
+    if (authMode === 'login') {
+      const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
+      if (error) throw error;
+    } else {
+      const name = document.getElementById('auth-name').value.trim();
+      const { error } = await supabase.auth.signUp({ email, password: pass, options: { data: { name } } });
+      if (error) throw error;
+      showToast('Confirma o teu email!', 'success');
+    }
+  } catch(e) {
+    errEl.textContent = e.message || 'Erro de autenticação.';
+    errEl.style.display = 'block';
+  }
+});
+
+async function logout() {
+  if (supabase) await supabase.auth.signOut();
+  analyses = []; pipelineItems = [];
+  showAuth();
+}
+
+// ── DATA ──
+async function loadData() {
+  if (!supabase || !currentUser) {
+    analyses = JSON.parse(localStorage.getItem('map_analyses') || '[]');
+    pipelineItems = JSON.parse(localStorage.getItem('map_pipeline') || '[]');
+    return;
+  }
+  try {
+    const [{ data: a }, { data: p }] = await Promise.all([
+      supabase.from('map_analyses').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false }),
+      supabase.from('map_pipeline').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false })
+    ]);
+    analyses = a || [];
+    pipelineItems = p || [];
+  } catch(e) {
+    analyses = JSON.parse(localStorage.getItem('map_analyses') || '[]');
+    pipelineItems = JSON.parse(localStorage.getItem('map_pipeline') || '[]');
+  }
+}
+
+function saveLocal() {
+  localStorage.setItem('map_analyses', JSON.stringify(analyses));
+  localStorage.setItem('map_pipeline', JSON.stringify(pipelineItems));
+}
+
+// ── NAVIGATION ──
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const page = document.getElementById('page-' + name);
+  const nav = document.getElementById('nav-' + name);
+  if (page) page.classList.add('active');
+  if (nav) nav.classList.add('active');
+  if (name === 'stats') renderStats();
+  if (name === 'lista') renderAnalysesList();
+  if (name === 'calendario') renderCalendar();
+}
+
+// ── TABS ANÁLISE ──
+function switchAnalysisTab(tab) {
+  document.querySelectorAll('.analysis-tab-content').forEach(t => t.style.display = 'none');
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('atab-' + tab).style.display = 'block';
+  event.target.classList.add('active');
+}
+
+function switchPhase(phase, btn) {
+  document.querySelectorAll('[id^="phase-"]').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.phase-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('phase-' + phase).style.display = 'block';
+  btn.classList.add('active');
+}
+
+// ── RATINGS ──
+function initRatings() {
+  ['rating-geral', 'rating-tatica', 'rating-intensidade', 'rating-ofensiva', 'rating-defensiva'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = '';
+    for (let i = 1; i <= 10; i++) {
+      const btn = document.createElement('button');
+      btn.className = 'rating-btn';
+      btn.textContent = i;
+      btn.dataset.val = i;
+      btn.onclick = () => {
+        el.querySelectorAll('.rating-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+      };
+      el.appendChild(btn);
+    }
+  });
+}
+
+function getRating(id) {
+  const sel = document.querySelector(`#${id} .rating-btn.selected`);
+  return sel ? parseInt(sel.dataset.val) : null;
+}
+
+function setRating(id, val) {
+  if (!val) return;
+  const btns = document.querySelectorAll(`#${id} .rating-btn`);
+  btns.forEach(b => { b.classList.toggle('selected', parseInt(b.dataset.val) === val); });
+}
+
+// ── TAGS ──
+const tagsData = { perfil: [] };
+function addTag(group) {
+  const input = document.getElementById(group + '-tag-input');
+  const val = input.value.trim();
+  if (!val) return;
+  tagsData[group].push(val);
+  input.value = '';
+  renderTags(group);
+}
+function removeTag(group, i) { tagsData[group].splice(i, 1); renderTags(group); }
+function renderTags(group) {
+  const wrap = document.getElementById(group + '-tags-wrap');
+  wrap.innerHTML = tagsData[group].map((t, i) =>
+    `<span class="tag-pill">${t} <span class="remove" onclick="removeTag('${group}',${i})">×</span></span>`
+  ).join('');
+}
+
+// ── PITCH ──
+function initPitch() {
+  const container = document.getElementById('pitch-container');
+  if (!container) return;
+  container.addEventListener('click', onPitchClick);
+}
+
+function onPitchClick(e) {
+  const rect = e.currentTarget.getBoundingClientRect();
+  const x = ((e.clientX - rect.left) / rect.width * 100).toFixed(1);
+  const y = ((e.clientY - rect.top) / rect.height * 100).toFixed(1);
+  addPitchEvent(x, y, currentEventType);
+}
+
+function addPitchEvent(x, y, type) {
+  const ev = { id: Date.now(), x, y, type };
+  pitchEvents.push(ev);
+  renderPitchMarker(ev);
+  updateEventCount();
+  renderEventsList();
+}
+
+function renderPitchMarker(ev) {
+  const container = document.getElementById('event-markers-container');
+  const marker = document.createElement('div');
+  marker.className = 'event-marker';
+  marker.id = 'marker-' + ev.id;
+  marker.style.left = ev.x + '%';
+  marker.style.top = ev.y + '%';
+  marker.style.background = EVENT_COLORS[ev.type] + 'cc';
+  marker.style.pointerEvents = 'all';
+  marker.textContent = EVENT_ICONS[ev.type];
+  marker.title = ev.type + ' (' + ev.x + ', ' + ev.y + ')';
+  marker.onclick = (e) => { e.stopPropagation(); removePitchEvent(ev.id); };
+  container.appendChild(marker);
+}
+
+function removePitchEvent(id) {
+  pitchEvents = pitchEvents.filter(e => e.id !== id);
+  const el = document.getElementById('marker-' + id);
+  if (el) el.remove();
+  updateEventCount();
+  renderEventsList();
+}
+
+function clearPitchEvents() {
+  pitchEvents = [];
+  document.getElementById('event-markers-container').innerHTML = '';
+  updateEventCount();
+  renderEventsList();
+}
+
+function updateEventCount() {
+  document.getElementById('event-count-label').textContent = pitchEvents.length + ' evento(s) marcado(s)';
+  document.getElementById('events-list-card').style.display = pitchEvents.length ? 'block' : 'none';
+}
+
+function renderEventsList() {
+  const el = document.getElementById('events-list');
+  if (!pitchEvents.length) { el.innerHTML = ''; return; }
+  el.innerHTML = pitchEvents.map(ev => `
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:16px">${EVENT_ICONS[ev.type]}</span>
+      <span style="flex:1;font-size:12px;color:var(--text2)">${ev.type.toUpperCase()} — X:${ev.x}% Y:${ev.y}%</span>
+      <button onclick="removePitchEvent(${ev.id})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:16px">×</button>
+    </div>
+  `).join('');
+}
+
+function selectEventType(type, btn) {
+  currentEventType = type;
+  document.querySelectorAll('.event-type-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function restorePitchEvents(events) {
+  clearPitchEvents();
+  if (!events) return;
+  pitchEvents = events;
+  events.forEach(ev => renderPitchMarker(ev));
+  updateEventCount();
+  renderEventsList();
+}
+
+// ── SAVE ANALYSIS ──
+function getFormData() {
+  return {
+    tipo: document.getElementById('f-tipo').value,
+    competicao: document.getElementById('f-competicao').value,
+    casa: document.getElementById('f-casa').value,
+    fora: document.getElementById('f-fora').value,
+    resultado: document.getElementById('f-resultado').value,
+    data: document.getElementById('f-data').value,
+    analista: document.getElementById('f-analista').value,
+    sistema: document.getElementById('f-sistema').value,
+    sistema_adv: document.getElementById('f-sistema-adv').value,
+    perfil_tags: [...tagsData.perfil],
+    // Tático
+    posse: document.getElementById('f-posse').value,
+    ppda: document.getElementById('f-ppda').value,
+    linha_def: document.getElementById('f-linha-def').value,
+    linha_of: document.getElementById('f-linha-of').value,
+    amplitude_def: document.getElementById('f-amplitude-def').value,
+    amplitude_of: document.getElementById('f-amplitude-of').value,
+    remates: document.getElementById('f-remates').value,
+    remates_b: document.getElementById('f-remates-b').value,
+    xg: document.getElementById('f-xg').value,
+    xga: document.getElementById('f-xga').value,
+    cantos: document.getElementById('f-cantos').value,
+    faltas: document.getElementById('f-faltas').value,
+    passes: document.getElementById('f-passes').value,
+    passes_p: document.getElementById('f-passes-p').value,
+    // Fases
+    est_ataque: document.getElementById('f-est-ataque').value,
+    padroes_ataque: document.getElementById('f-padroes-ataque').value,
+    zona_ataque: document.getElementById('f-zona-ataque').value,
+    bloco: document.getElementById('f-bloco').value,
+    pressao: document.getElementById('f-pressao').value,
+    notas_defesa: document.getElementById('f-notas-defesa').value,
+    vel_trans_pos: document.getElementById('f-vel-trans-pos').value,
+    trans_pos_notas: document.getElementById('f-trans-pos-notas').value,
+    reacao_perda: document.getElementById('f-reacao-perda').value,
+    trans_neg_notas: document.getElementById('f-trans-neg-notas').value,
+    cantos_of: document.getElementById('f-cantos-of').value,
+    cantos_def: document.getElementById('f-cantos-def').value,
+    livres: document.getElementById('f-livres').value,
+    bp_notas: document.getElementById('f-bp-notas').value,
+    // Avaliações
+    rating_geral: getRating('rating-geral'),
+    rating_tatica: getRating('rating-tatica'),
+    rating_intensidade: getRating('rating-intensidade'),
+    rating_ofensiva: getRating('rating-ofensiva'),
+    rating_defensiva: getRating('rating-defensiva'),
+    // Notas
+    pontos_fortes: document.getElementById('f-pontos-fortes').value,
+    pontos_fracos: document.getElementById('f-pontos-fracos').value,
+    recomendacoes: document.getElementById('f-recomendacoes').value,
+    notas: document.getElementById('f-notas').value,
+    proximo_data: document.getElementById('f-proximo-data').value,
+    proximo_local: document.getElementById('f-proximo-local').value,
+    proximo_plano: document.getElementById('f-proximo-plano').value,
+    // Mapa
+    pitch_events: pitchEvents
+  };
+}
+
+async function saveAnalysis() {
+  const data = getFormData();
+  if (!data.casa && !data.fora) { showToast('Preenche pelo menos as equipas!', 'error'); return; }
+  const record = {
+    ...data,
+    user_id: currentUser?.id || 'offline',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+
+  if (editingAnalysisId) {
+    record.id = editingAnalysisId;
+    if (supabase && currentUser) {
+      const { error } = await supabase.from('map_analyses').update(record).eq('id', editingAnalysisId);
+      if (error) { showToast('Erro ao actualizar: ' + error.message, 'error'); return; }
+    }
+    const idx = analyses.findIndex(a => a.id === editingAnalysisId);
+    if (idx >= 0) analyses[idx] = record;
+    editingAnalysisId = null;
+  } else {
+    record.id = crypto.randomUUID();
+    if (supabase && currentUser) {
+      const { data: saved, error } = await supabase.from('map_analyses').insert(record).select().single();
+      if (error) { showToast('Erro ao guardar: ' + error.message, 'error'); return; }
+      if (saved) record.id = saved.id;
+    }
+    analyses.unshift(record);
+  }
+
+  saveLocal();
+  showToast('Análise guardada com sucesso!', 'success');
+  openNewAnalysis();
+  renderDashboard();
+}
+
+function openNewAnalysis() {
+  editingAnalysisId = null;
+  document.querySelectorAll('.analysis-tab-content').forEach(t => t.style.display = 'none');
+  document.getElementById('atab-info').style.display = 'block';
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', i === 0));
+  // Clear form
+  ['f-tipo','f-competicao','f-casa','f-fora','f-resultado','f-data','f-analista',
+   'f-sistema','f-sistema-adv','f-posse','f-ppda','f-linha-def','f-linha-of',
+   'f-amplitude-def','f-amplitude-of','f-remates','f-remates-b','f-xg','f-xga',
+   'f-cantos','f-faltas','f-passes','f-passes-p','f-est-ataque','f-padroes-ataque',
+   'f-zona-ataque','f-bloco','f-pressao','f-notas-defesa','f-vel-trans-pos',
+   'f-trans-pos-notas','f-reacao-perda','f-trans-neg-notas','f-cantos-of',
+   'f-cantos-def','f-livres','f-bp-notas','f-pontos-fortes','f-pontos-fracos',
+   'f-recomendacoes','f-notas','f-proximo-data','f-proximo-local','f-proximo-plano'
+  ].forEach(id => { const el = document.getElementById(id); if (el) el.value = el.tagName === 'SELECT' ? el.options[0]?.value || '' : ''; });
+  initRatings();
+  tagsData.perfil = []; renderTags('perfil');
+  clearPitchEvents();
+  // Set date to today
+  document.getElementById('f-data').value = new Date().toISOString().split('T')[0];
+  if (currentUser?.email) document.getElementById('f-analista').value = currentUser.user_metadata?.name || currentUser.email.split('@')[0];
+}
+
+function loadAnalysisForEdit() {
+  if (!currentAnalysisId) return;
+  const a = analyses.find(x => x.id === currentAnalysisId);
+  if (!a) return;
+  editingAnalysisId = a.id;
+  closeModal('detail-modal');
+  showPage('analise');
+  setTimeout(() => {
+    const setVal = (id, val) => { const el = document.getElementById(id); if (el && val !== undefined && val !== null) el.value = val; };
+    ['tipo','competicao','casa','fora','resultado','data','analista','sistema',
+     'sistema_adv','posse','ppda','linha_def','linha_of','amplitude_def','amplitude_of',
+     'remates','remates_b','xg','xga','cantos','faltas','passes','passes_p',
+     'est_ataque','padroes_ataque','zona_ataque','bloco','pressao','notas_defesa',
+     'vel_trans_pos','trans_pos_notas','reacao_perda','trans_neg_notas','cantos_of',
+     'cantos_def','livres','bp_notas','pontos_fortes','pontos_fracos','recomendacoes',
+     'notas','proximo_data','proximo_local','proximo_plano'
+    ].forEach(k => setVal('f-' + k.replace(/_/g, '-'), a[k]));
+    setRating('rating-geral', a.rating_geral);
+    setRating('rating-tatica', a.rating_tatica);
+    setRating('rating-intensidade', a.rating_intensidade);
+    setRating('rating-ofensiva', a.rating_ofensiva);
+    setRating('rating-defensiva', a.rating_defensiva);
+    tagsData.perfil = a.perfil_tags || []; renderTags('perfil');
+    restorePitchEvents(a.pitch_events);
+  }, 50);
+}
+
+async function deleteCurrentAnalysis() {
+  if (!currentAnalysisId) return;
+  if (!confirm('Eliminar esta análise?')) return;
+  if (supabase && currentUser) {
+    await supabase.from('map_analyses').delete().eq('id', currentAnalysisId);
+  }
+  analyses = analyses.filter(a => a.id !== currentAnalysisId);
+  saveLocal();
+  closeModal('detail-modal');
+  renderDashboard();
+  renderAnalysesList();
+  showToast('Análise eliminada.', 'success');
+}
+
+// ── DASHBOARD ──
+function renderDashboard() {
+  document.getElementById('ds-total').textContent = analyses.length;
+  const teams = new Set([...analyses.map(a => a.casa), ...analyses.map(a => a.fora)].filter(Boolean));
+  document.getElementById('ds-teams').textContent = teams.size;
+  const now = new Date(); const thisMonth = now.getMonth(); const thisYear = now.getFullYear();
+  const monthCount = analyses.filter(a => {
+    if (!a.data) return false;
+    const d = new Date(a.data); return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
+  }).length;
+  document.getElementById('ds-month').textContent = monthCount;
+
+  const recent = analyses.slice(0, 5);
+  const recentEl = document.getElementById('recent-list');
+  if (!recent.length) {
+    recentEl.innerHTML = '<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12h6m-6 4h6M9 8h6M5 3h14a2 2 0 012 2v16a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z"/></svg><p>Sem análises ainda.<br>Cria a tua primeira!</p></div>';
+  } else {
+    recentEl.innerHTML = recent.map(a => `
+      <div class="recent-item" onclick="showAnalysisDetail('${a.id}')">
+        <div style="flex:1">
+          <div class="recent-vs">${a.casa || '?'} vs ${a.fora || '?'}</div>
+          <div class="recent-meta">${a.competicao || ''} · ${a.data || ''}</div>
+        </div>
+        ${a.resultado ? `<div class="recent-score">${a.resultado}</div>` : ''}
+        <span class="badge ${a.tipo === 'adversario' ? 'badge-red' : a.tipo === 'propria' ? 'badge-green' : 'badge-blue'}">${a.tipo || 'análise'}</span>
+      </div>
+    `).join('');
+  }
+
+  // Próximos jogos (pipeline)
+  const upcoming = pipelineItems.filter(p => p.data && new Date(p.data) >= new Date()).sort((a, b) => new Date(a.data) - new Date(b.data)).slice(0, 3);
+  const upEl = document.getElementById('dash-upcoming');
+  upEl.innerHTML = upcoming.length ? upcoming.map(p => `
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:20px">📅</span>
+      <div style="flex:1"><div style="font-weight:600;font-size:13px">${p.adversario}</div><div style="font-size:11px;color:var(--text3)">${p.competicao || ''} · ${p.data || ''}</div></div>
+      <span class="badge badge-blue">${p.estado || ''}</span>
+    </div>
+  `).join('') : '<div style="font-size:12px;color:var(--text3);padding:8px 0">Sem jogos agendados.</div>';
+}
+
+// ── ANALYSES LIST ──
+function renderAnalysesList() {
+  const query = document.getElementById('search-input')?.value.toLowerCase() || '';
+  const filterTipo = document.getElementById('filter-tipo')?.value || '';
+  const filtered = analyses.filter(a => {
+    const matchSearch = !query || (a.casa + a.fora + (a.competicao||'')).toLowerCase().includes(query);
+    const matchTipo = !filterTipo || a.tipo === filterTipo;
+    return matchSearch && matchTipo;
+  });
+  const el = document.getElementById('analyses-list');
+  if (!filtered.length) {
+    el.innerHTML = '<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><p>Nenhuma análise encontrada.</p></div>';
+    return;
+  }
+  el.innerHTML = filtered.map(a => `
+    <div class="analysis-item" onclick="showAnalysisDetail('${a.id}')">
+      <div class="analysis-item-header">
+        <div class="analysis-item-vs">${a.casa || '?'} vs ${a.fora || '?'}</div>
+        <span class="badge ${a.tipo === 'adversario' ? 'badge-red' : a.tipo === 'propria' ? 'badge-green' : 'badge-blue'}">${a.tipo || ''}</span>
+      </div>
+      <div class="analysis-item-body">
+        ${a.resultado ? `<span class="analysis-item-stat" style="font-family:var(--font-display);font-size:18px;color:var(--accent)">${a.resultado}</span>` : ''}
+        ${a.competicao ? `<span class="analysis-item-stat">📋 ${a.competicao}</span>` : ''}
+        ${a.data ? `<span class="analysis-item-stat">📅 ${a.data}</span>` : ''}
+        ${a.sistema ? `<span class="analysis-item-stat">🔷 ${a.sistema}</span>` : ''}
+        ${a.rating_geral ? `<span class="analysis-item-stat" style="color:var(--accent)">★ ${a.rating_geral}/10</span>` : ''}
+        ${a.analista ? `<span class="analysis-item-stat">👤 ${a.analista}</span>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterAnalyses() { renderAnalysesList(); }
+
+// ── DETAIL MODAL ──
+function showAnalysisDetail(id) {
+  currentAnalysisId = id;
+  const a = analyses.find(x => x.id === id);
+  if (!a) return;
+  document.getElementById('detail-title').textContent = `${a.casa || '?'} vs ${a.fora || '?'}`;
+  const content = document.getElementById('detail-content');
+  content.innerHTML = `
+    <div class="report-section">
+      <div class="report-section-title">Informação Geral</div>
+      ${kv('Tipo', `<span class="badge ${a.tipo === 'adversario' ? 'badge-red' : a.tipo === 'propria' ? 'badge-green' : 'badge-blue'}">${a.tipo || '-'}</span>`)}
+      ${kv('Competição', a.competicao)}
+      ${kv('Data', a.data)}
+      ${kv('Resultado', `<strong style="color:var(--accent);font-family:var(--font-display);font-size:20px">${a.resultado || '-'}</strong>`)}
+      ${kv('Sistema (Analisada)', a.sistema)}
+      ${kv('Sistema (Adversário)', a.sistema_adv)}
+      ${kv('Analista', a.analista)}
+    </div>
+    ${a.posse || a.xg ? `
+    <div class="report-section">
+      <div class="report-section-title">Estatísticas</div>
+      ${kv('Posse', a.posse ? a.posse + '%' : '-')}
+      ${kv('xG / xGA', (a.xg || '-') + ' / ' + (a.xga || '-'))}
+      ${kv('Remates / À Baliza', (a.remates || '-') + ' / ' + (a.remates_b || '-'))}
+      ${kv('Passes / Precisão', (a.passes || '-') + ' / ' + (a.passes_p ? a.passes_p + '%' : '-'))}
+      ${kv('PPDA', a.ppda)}
+    </div>` : ''}
+    ${a.padroes_ataque || a.notas_defesa ? `
+    <div class="report-section">
+      <div class="report-section-title">Análise de Fases</div>
+      ${a.padroes_ataque ? `<div style="margin-bottom:8px"><div class="report-k" style="margin-bottom:4px">Padrões Ofensivos</div><div style="font-size:13px;line-height:1.5">${a.padroes_ataque}</div></div>` : ''}
+      ${a.notas_defesa ? `<div style="margin-bottom:8px"><div class="report-k" style="margin-bottom:4px">Organização Defensiva</div><div style="font-size:13px;line-height:1.5">${a.notas_defesa}</div></div>` : ''}
+    </div>` : ''}
+    ${a.rating_geral || a.pontos_fortes ? `
+    <div class="report-section">
+      <div class="report-section-title">Avaliação</div>
+      ${a.rating_geral ? kv('Performance Geral', ratingStars(a.rating_geral)) : ''}
+      ${a.rating_tatica ? kv('Tática', ratingStars(a.rating_tatica)) : ''}
+      ${a.rating_intensidade ? kv('Intensidade', ratingStars(a.rating_intensidade)) : ''}
+      ${a.pontos_fortes ? `<div style="margin-top:10px"><div class="report-k" style="margin-bottom:4px;color:var(--green)">✅ Pontos Fortes</div><div style="font-size:13px;line-height:1.5">${a.pontos_fortes}</div></div>` : ''}
+      ${a.pontos_fracos ? `<div style="margin-top:8px"><div class="report-k" style="margin-bottom:4px;color:var(--red)">⚠️ Vulnerabilidades</div><div style="font-size:13px;line-height:1.5">${a.pontos_fracos}</div></div>` : ''}
+      ${a.recomendacoes ? `<div style="margin-top:8px"><div class="report-k" style="margin-bottom:4px;color:var(--blue)">💡 Recomendações</div><div style="font-size:13px;line-height:1.5">${a.recomendacoes}</div></div>` : ''}
+    </div>` : ''}
+    ${a.pitch_events?.length ? `
+    <div class="report-section">
+      <div class="report-section-title">Eventos no Mapa</div>
+      <div style="font-size:13px;color:var(--text2)">${a.pitch_events.length} eventos registados: 
+        ${Object.entries(a.pitch_events.reduce((acc, e) => { acc[e.type] = (acc[e.type]||0)+1; return acc; }, {})).map(([t,c]) => `${EVENT_ICONS[t]} ${t}(${c})`).join(', ')}
+      </div>
+    </div>` : ''}
+  `;
+  openModal('detail-modal');
+}
+
+function kv(k, v) {
+  if (!v) return '';
+  return `<div class="report-kv"><span class="report-k">${k}</span><span class="report-v">${v}</span></div>`;
+}
+function ratingStars(val) {
+  return `<span style="color:var(--accent);font-family:var(--font-display);font-size:18px">${val}/10</span>`;
+}
+
+// ── PIPELINE / KANBAN ──
+function renderKanban() {
+  const board = document.getElementById('kanban-board');
+  board.innerHTML = KANBAN_COLS.map(col => `
+    <div class="kanban-col">
+      <div class="kanban-col-title">
+        <span style="color:${col.color}">${col.label}</span>
+        <span class="kanban-count">${pipelineItems.filter(p => p.estado === col.id).length}</span>
+      </div>
+      <div id="kcol-${col.id}">
+        ${pipelineItems.filter(p => p.estado === col.id).map(p => `
+          <div class="kanban-card" onclick="movePipelineItem('${p.id}')">
+            <div class="kanban-card-title">${p.adversario || 'Adversário'}</div>
+            <div class="kanban-card-sub">${p.competicao || ''} · ${p.data || ''}</div>
+            <div class="kanban-card-tags">
+              ${p.prioridade === 'urgente' ? '<span class="badge badge-red">urgente</span>' : p.prioridade === 'alta' ? '<span class="badge badge-yellow">alta</span>' : ''}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      <button class="btn btn-ghost" onclick="openPipelineModal('${col.id}')" style="width:100%;font-size:12px;margin-top:8px;justify-content:center">+ Adicionar</button>
+    </div>
+  `).join('');
+}
+
+function openPipelineModal(estado) {
+  document.getElementById('pk-estado').value = estado;
+  document.getElementById('pk-adversario').value = '';
+  document.getElementById('pk-competicao').value = '';
+  document.getElementById('pk-data').value = '';
+  openModal('pipeline-modal');
+}
+
+async function savePipelineItem() {
+  const item = {
+    id: crypto.randomUUID(),
+    adversario: document.getElementById('pk-adversario').value,
+    competicao: document.getElementById('pk-competicao').value,
+    data: document.getElementById('pk-data').value,
+    estado: document.getElementById('pk-estado').value,
+    prioridade: document.getElementById('pk-prioridade').value,
+    user_id: currentUser?.id || 'offline',
+    created_at: new Date().toISOString()
+  };
+  if (supabase && currentUser) {
+    const { data: saved, error } = await supabase.from('map_pipeline').insert(item).select().single();
+    if (error) { showToast('Erro: ' + error.message, 'error'); return; }
+    if (saved) item.id = saved.id;
+  }
+  pipelineItems.unshift(item);
+  saveLocal();
+  closeModal('pipeline-modal');
+  renderKanban();
+  renderDashboard();
+  showToast('Adicionado ao pipeline!', 'success');
+}
+
+async function movePipelineItem(id) {
+  const item = pipelineItems.find(p => p.id === id);
+  if (!item) return;
+  const cols = KANBAN_COLS.map(c => c.id);
+  const idx = cols.indexOf(item.estado);
+  const next = cols[(idx + 1) % cols.length];
+  item.estado = next;
+  if (supabase && currentUser) await supabase.from('map_pipeline').update({ estado: next }).eq('id', id);
+  saveLocal();
+  renderKanban();
+}
+
+// ── CALENDAR ──
+function renderCalendar() {
+  const year = calendarDate.getFullYear();
+  const month = calendarDate.getMonth();
+  const monthNames = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const dayNames = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  document.getElementById('cal-month-label').textContent = `${monthNames[month]} ${year}`;
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const today = new Date();
+
+  const allEvents = [
+    ...analyses.filter(a => a.data).map(a => ({ date: a.data, title: `${a.casa} vs ${a.fora}`, sub: a.competicao || '', type: 'analysis' })),
+    ...pipelineItems.filter(p => p.data).map(p => ({ date: p.data, title: p.adversario, sub: p.competicao || '', type: 'pipeline' }))
+  ];
+
+  const daysWithEvents = new Set(allEvents.map(e => e.date?.split('T')[0]));
+
+  const grid = document.getElementById('cal-grid');
+  let html = dayNames.map(d => `<div class="cal-day-label">${d}</div>`).join('');
+  for (let i = 0; i < firstDay; i++) html += `<div class="cal-day empty"></div>`;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday = d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+    const hasEvent = daysWithEvents.has(dateStr);
+    html += `<div class="cal-day${isToday ? ' today' : ''}${hasEvent ? ' has-event' : ''}" onclick="showDayEvents('${dateStr}')">${d}</div>`;
+  }
+  grid.innerHTML = html;
+
+  // Show upcoming events
+  const upcoming = allEvents.filter(e => e.date >= `${year}-${String(month+1).padStart(2,'0')}-01`).sort((a,b) => a.date.localeCompare(b.date)).slice(0, 10);
+  document.getElementById('cal-events-list').innerHTML = upcoming.map(e => `
+    <div class="cal-event-item">
+      <div class="cal-event-title">${e.title}</div>
+      <div class="cal-event-sub">${e.date} · ${e.sub} · <span class="badge ${e.type === 'analysis' ? 'badge-blue' : 'badge-yellow'}">${e.type === 'analysis' ? 'análise' : 'pipeline'}</span></div>
+    </div>
+  `).join('') || '<div style="font-size:12px;color:var(--text3)">Sem eventos neste mês.</div>';
+}
+
+function changeMonth(dir) { calendarDate.setMonth(calendarDate.getMonth() + dir); renderCalendar(); }
+
+function showDayEvents(dateStr) {
+  const events = [
+    ...analyses.filter(a => a.data?.split('T')[0] === dateStr).map(a => `Análise: ${a.casa} vs ${a.fora}`),
+    ...pipelineItems.filter(p => p.data?.split('T')[0] === dateStr).map(p => `Pipeline: ${p.adversario}`)
+  ];
+  if (events.length) showToast(events.join(' | '), 'success');
+}
+
+// ── STATS ──
+function renderStats() {
+  // Summary
+  const avg = (arr, key) => { const vals = arr.map(a => parseFloat(a[key])).filter(v => !isNaN(v)); return vals.length ? (vals.reduce((a,b) => a+b, 0)/vals.length).toFixed(1) : '-'; };
+  document.getElementById('stats-summary').innerHTML = `
+    <div class="stat-box"><div class="stat-box-val">${avg(analyses, 'posse')}%</div><div class="stat-box-lbl">Posse Média</div></div>
+    <div class="stat-box"><div class="stat-box-val">${avg(analyses, 'xg')}</div><div class="stat-box-lbl">xG Médio</div></div>
+    <div class="stat-box"><div class="stat-box-val">${avg(analyses, 'rating_geral')}</div><div class="stat-box-lbl">Rating Médio</div></div>
+  `;
+
+  const recent = analyses.slice(0, 8).reverse();
+  const labels = recent.map(a => a.casa && a.fora ? `${a.casa.slice(0,6)} vs ${a.fora.slice(0,6)}` : a.data || '?');
+
+  if (charts.posse) charts.posse.destroy();
+  const ctxP = document.getElementById('chart-posse');
+  if (ctxP) {
+    charts.posse = new Chart(ctxP, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Posse (%)',
+          data: recent.map(a => parseFloat(a.posse) || 0),
+          backgroundColor: 'rgba(232,196,42,0.7)',
+          borderColor: '#e8c42a',
+          borderWidth: 1, borderRadius: 4
+        }]
+      },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#8b97b5', font: { size: 9 } } }, y: { ticks: { color: '#8b97b5' }, max: 100 } } }
+    });
+  }
+
+  if (charts.xg) charts.xg.destroy();
+  const ctxX = document.getElementById('chart-xg');
+  if (ctxX) {
+    charts.xg = new Chart(ctxX, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          { label: 'xG', data: recent.map(a => parseFloat(a.xg) || 0), borderColor: '#4a9eff', backgroundColor: 'rgba(74,158,255,0.1)', tension: 0.4, fill: true },
+          { label: 'xGA', data: recent.map(a => parseFloat(a.xga) || 0), borderColor: '#e85d4a', backgroundColor: 'rgba(232,93,74,0.1)', tension: 0.4, fill: true }
+        ]
+      },
+      options: { responsive: true, plugins: { legend: { labels: { color: '#8b97b5', font: { size: 11 } } } }, scales: { x: { ticks: { color: '#8b97b5', font: { size: 9 } } }, y: { ticks: { color: '#8b97b5' } } } }
+    });
+  }
+
+  if (charts.radar) charts.radar.destroy();
+  const ctxR = document.getElementById('chart-radar');
+  if (ctxR && analyses.length) {
+    const avgs = {
+      Geral: avg(analyses, 'rating_geral'),
+      Táctica: avg(analyses, 'rating_tatica'),
+      Intensidade: avg(analyses, 'rating_intensidade'),
+      Ofensiva: avg(analyses, 'rating_ofensiva'),
+      Defensiva: avg(analyses, 'rating_defensiva')
+    };
+    charts.radar = new Chart(ctxR, {
+      type: 'radar',
+      data: {
+        labels: Object.keys(avgs),
+        datasets: [{ label: 'Médias', data: Object.values(avgs).map(Number), backgroundColor: 'rgba(232,196,42,0.2)', borderColor: '#e8c42a', borderWidth: 2, pointBackgroundColor: '#e8c42a' }]
+      },
+      options: { responsive: true, scales: { r: { min: 0, max: 10, ticks: { color: '#8b97b5', stepSize: 2 }, grid: { color: '#243050' }, angleLines: { color: '#243050' }, pointLabels: { color: '#8b97b5', font: { size: 11 } } } }, plugins: { legend: { display: false } } }
+    });
+  }
+}
+
+// ── PDF EXPORT ──
+function exportPDF() {
+  const data = getFormData();
+  generatePDF(data);
+}
+function exportDetailPDF() {
+  if (!currentAnalysisId) return;
+  const a = analyses.find(x => x.id === currentAnalysisId);
+  if (a) generatePDF(a);
+}
+
+function generatePDF(data) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const W = 210; const margin = 16;
+
+  // Header
+  doc.setFillColor(10, 14, 26);
+  doc.rect(0, 0, W, 40, 'F');
+  doc.setTextColor(232, 196, 42);
+  doc.setFontSize(24);
+  doc.setFont('helvetica', 'bold');
+  doc.text('MATCHANALYST PRO', margin, 18);
+  doc.setFontSize(10);
+  doc.setTextColor(139, 151, 181);
+  doc.text('Relatório de Análise de Jogo', margin, 26);
+  doc.setFontSize(12);
+  doc.setTextColor(255,255,255);
+  doc.text(`${data.casa || '?'} vs ${data.fora || '?'}`, margin, 35);
+  if (data.resultado) {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.setTextColor(232, 196, 42);
+    doc.text(data.resultado, W - margin - doc.getTextWidth(data.resultado) * 16/doc.internal.scaleFactor + 10, 35);
+  }
+
+  let y = 52;
+  const lineH = 7;
+
+  function section(title) {
+    doc.setFillColor(26, 34, 53);
+    doc.rect(margin, y - 5, W - margin*2, 8, 'F');
+    doc.setTextColor(232, 196, 42);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text(title.toUpperCase(), margin + 3, y + 0.5);
+    y += lineH;
+  }
+
+  function row(label, value) {
+    if (!value) return;
+    doc.setTextColor(139, 151, 181);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text(label + ':', margin + 3, y);
+    doc.setTextColor(232, 234, 242);
+    doc.text(String(value), margin + 70, y);
+    y += lineH - 1;
+    if (y > 270) { doc.addPage(); y = 20; }
+  }
+
+  function multiline(label, value) {
+    if (!value) return;
+    doc.setTextColor(139, 151, 181);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text(label + ':', margin + 3, y);
+    y += 5;
+    doc.setTextColor(232, 234, 242);
+    const lines = doc.splitTextToSize(String(value), W - margin*2 - 6);
+    lines.forEach(line => { doc.text(line, margin + 6, y); y += 5; if (y > 270) { doc.addPage(); y = 20; } });
+    y += 2;
+  }
+
+  section('Informação do Jogo');
+  row('Tipo', data.tipo); row('Competição', data.competicao); row('Data', data.data);
+  row('Sistema Equipa', data.sistema); row('Sistema Adversário', data.sistema_adv);
+  row('Analista', data.analista);
+
+  if (data.posse || data.xg) {
+    y += 3; section('Estatísticas');
+    row('Posse de Bola', data.posse ? data.posse + '%' : '');
+    row('xG / xGA', data.xg && data.xga ? `${data.xg} / ${data.xga}` : '');
+    row('Remates', data.remates ? `${data.remates} total, ${data.remates_b} à baliza` : '');
+    row('PPDA', data.ppda);
+  }
+
+  if (data.padroes_ataque || data.notas_defesa) {
+    y += 3; section('Análise de Fases');
+    multiline('Ofensiva', data.padroes_ataque);
+    multiline('Defensiva', data.notas_defesa);
+    multiline('Trans. Positiva', data.trans_pos_notas);
+    multiline('Trans. Negativa', data.trans_neg_notas);
+  }
+
+  if (data.pontos_fortes || data.pontos_fracos) {
+    y += 3; section('Avaliação Qualitativa');
+    row('Rating Geral', data.rating_geral ? data.rating_geral + '/10' : '');
+    row('Táctica', data.rating_tatica ? data.rating_tatica + '/10' : '');
+    multiline('Pontos Fortes', data.pontos_fortes);
+    multiline('Vulnerabilidades', data.pontos_fracos);
+    multiline('Recomendações', data.recomendacoes);
+  }
+
+  if (data.proximo_data || data.proximo_plano) {
+    y += 3; section('Próximo Confronto');
+    row('Data', data.proximo_data); row('Local', data.proximo_local);
+    multiline('Plano', data.proximo_plano);
+  }
+
+  // Footer
+  doc.setFillColor(10, 14, 26);
+  doc.rect(0, 287, W, 10, 'F');
+  doc.setTextColor(90, 106, 138);
+  doc.setFontSize(8);
+  doc.text('MatchAnalyst Pro · ' + new Date().toLocaleDateString('pt-PT'), margin, 294);
+
+  doc.save(`matchanalyst_${(data.casa||'analise').replace(/\s/g,'_')}_vs_${(data.fora||'adversario').replace(/\s/g,'_')}.pdf`);
+  showToast('PDF exportado!', 'success');
+}
+
+// ── MODAL ──
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+// ── TOAST ──
+function showToast(msg, type = '') {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = 'toast ' + type;
+  toast.textContent = msg;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 3500);
+}
+
+// ── KEYBOARD ──
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('auth-screen').style.display !== 'none') {
+    document.getElementById('auth-btn').click();
+  }
+});
+
+// ── START ──
+init();
+</script>
+
+<!-- SUPABASE SQL SCHEMA (cola no Supabase SQL Editor)
+-- Tabela de análises
+CREATE TABLE map_analyses (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  tipo TEXT, competicao TEXT, casa TEXT, fora TEXT, resultado TEXT, data DATE, analista TEXT,
+  sistema TEXT, sistema_adv TEXT, perfil_tags JSONB,
+  posse NUMERIC, ppda NUMERIC, linha_def NUMERIC, linha_of NUMERIC,
+  amplitude_def TEXT, amplitude_of TEXT, remates INTEGER, remates_b INTEGER,
+  xg NUMERIC, xga NUMERIC, cantos INTEGER, faltas INTEGER, passes INTEGER, passes_p NUMERIC,
+  est_ataque TEXT, padroes_ataque TEXT, zona_ataque TEXT,
+  bloco TEXT, pressao TEXT, notas_defesa TEXT,
+  vel_trans_pos TEXT, trans_pos_notas TEXT,
+  reacao_perda TEXT, trans_neg_notas TEXT,
+  cantos_of TEXT, cantos_def TEXT, livres TEXT, bp_notas TEXT,
+  rating_geral INTEGER, rating_tatica INTEGER, rating_intensidade INTEGER,
+  rating_ofensiva INTEGER, rating_defensiva INTEGER,
+  pontos_fortes TEXT, pontos_fracos TEXT, recomendacoes TEXT, notas TEXT,
+  proximo_data DATE, proximo_local TEXT, proximo_plano TEXT,
+  pitch_events JSONB,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE map_analyses ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users see own analyses" ON map_analyses FOR ALL USING (auth.uid() = user_id);
+
+-- Tabela de pipeline
+CREATE TABLE map_pipeline (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  adversario TEXT, competicao TEXT, data DATE, estado TEXT, prioridade TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE map_pipeline ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users see own pipeline" ON map_pipeline FOR ALL USING (auth.uid() = user_id);
+-->
+</body>
+</html>
